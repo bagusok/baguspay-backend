@@ -1,0 +1,171 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_DIRECT_URL")
+}
+
+model User {
+  id       String @id @unique @default(uuid())
+  username String @unique
+  email    String @unique
+  password String
+  phone    String @unique
+  longName String @map("long_name")
+
+  tokens String? @unique
+  role   Role    @default(USER)
+
+  isBanned     Boolean @default(false) @map("is_banned")
+  isVerifEmail Boolean @default(false) @map("is_verif_email")
+  isVerifPhone Boolean @default(false) @map("is_verif_phone")
+
+  otpCode String? @map("otp_code")
+  pinCode String? @map("pin_code")
+
+  balance Int @default(0)
+  point   Int @default(0)
+
+  verifiedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@map("users")
+}
+
+enum Role {
+  ADMIN
+  USER
+  RESELLER
+
+  @@map("role")
+}
+
+model Services {
+  id        String      @id @unique @default(uuid())
+  name      String      @unique
+  slug      String      @unique
+  desc      String?
+  imgLogo   String?     @map("img_logo")
+  imgBanner String?     @map("img_banner")
+  type      ServiceType @default(LAINNYA) @map("service_type")
+
+  isAvailable Boolean @default(true) @map("is_available")
+
+  inputFieldDescription String? @map("input_field_description")
+  inputFieldHintImage   String? @map("input_field_hint_image")
+
+  isInputFieldOne     Boolean        @default(false) @map("is_input_field_one")
+  inputFieldOneType   InputFieldType @default(TEXT) @map("input_field_one_type")
+  inputFieldOneOption Json?          @map("input_field_one_option")
+
+  isInputFieldTwo     Boolean        @default(false) @map("is_input_field_two")
+  inputFieldTwoType   InputFieldType @default(TEXT) @map("input_field_two_type")
+  inputFieldTwoOption Json?          @map("input_field_two_option")
+
+  isInputFieldThree     Boolean        @default(false) @map("is_input_field_three")
+  inputFieldThreeType   InputFieldType @default(TEXT) @map("input_field_three_type")
+  inputFieldThreeOption Json?          @map("input_field_three_option")
+
+  region          Region         @default(GLOBAL)
+  productCategory ProductGroup[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("services")
+}
+
+enum ServiceType {
+  GAME_DIRECT
+  GAME_VOUCHER
+  TAGIHAN
+  PULSA
+  PAKET_DATA
+  E_MONEY
+  AKUN_PREMIUM
+  SMM
+  LAINNYA
+
+  @@map("service_type")
+}
+
+enum InputFieldType {
+  TEXT
+  NUMBER
+  SELECT
+
+  @@map("input_field_type")
+}
+
+model ProductGroup {
+  id      String  @id @unique @default(uuid())
+  name    String
+  desc    String?
+  imgLogo String? @map("img_logo")
+
+  region Region @default(GLOBAL)
+
+  products Products[]
+  Services Services?  @relation(fields: [gamesId], references: [id])
+  gamesId  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("product_category")
+}
+
+model Products {
+  id            String              @id @unique @default(uuid())
+  name          String
+  desc          String?
+  imgLogo       String?             @map("img_logo")
+  price         Int
+  resellerPrice Int                 @map("reseller_price")
+  type          ServiceType         @default(LAINNYA) @map("type")
+  typeResponse  ProductResponseType @default(DIRECT) @map("type_response")
+
+  isAvalable Boolean @default(true)
+
+  h2hProvider       ProviderH2H? @map("h2h_provider")
+  idProductProvider String       @map("id_product_provider")
+  priceFromProvider Int          @map("price_from_provider")
+
+  ProductCategory   ProductGroup? @relation(fields: [productCategoryId], references: [id])
+  productCategoryId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("product")
+}
+
+enum ProductResponseType {
+  DIRECT
+  DiRECT_RETURN
+  MANUAL
+}
+
+enum Region {
+  INDONESIA
+  MALAYSIA
+  SINGAPORE
+  GLOBAL
+
+  @@map("region")
+}
+
+enum ProviderH2H {
+  DIGIFLAZZ
+  VIPRESELLER
+  VOCAGAMES
+  APIGAMES
+
+  @@map("provider_h2h")
+}
