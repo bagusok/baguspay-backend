@@ -2,7 +2,6 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
-import { CustomInterceptors } from './common/custom.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -13,7 +12,7 @@ async function bootstrap() {
     }),
   );
 
-  app.useGlobalInterceptors(new CustomInterceptors());
+  // app.useGlobalInterceptors(new CustomInterceptors());
 
   const config = new DocumentBuilder()
     .setTitle('Topup Game')

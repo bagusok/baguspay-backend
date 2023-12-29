@@ -111,14 +111,14 @@ model ProductGroup {
 
   region Region @default(GLOBAL)
 
-  products Products[]
-  Services Services?  @relation(fields: [gamesId], references: [id])
-  gamesId  String?
+  products   Products[]
+  Services   Services?  @relation(fields: [servicesId], references: [id])
+  servicesId String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@map("product_category")
+  @@map("product_group")
 }
 
 model Products {
@@ -127,11 +127,12 @@ model Products {
   desc          String?
   imgLogo       String?             @map("img_logo")
   price         Int
+  stock         Int                 @default(100)
   resellerPrice Int                 @map("reseller_price")
   type          ServiceType         @default(LAINNYA) @map("type")
   typeResponse  ProductResponseType @default(DIRECT) @map("type_response")
 
-  isAvalable Boolean @default(true)
+  isAvailable Boolean @default(true)
 
   h2hProvider       ProviderH2H? @map("h2h_provider")
   idProductProvider String       @map("id_product_provider")
@@ -143,7 +144,7 @@ model Products {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@map("product")
+  @@map("products")
 }
 
 enum ProductResponseType {
