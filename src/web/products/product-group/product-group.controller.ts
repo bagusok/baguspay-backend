@@ -18,7 +18,7 @@ import {
   createProductGroupDto,
   deleteProductGroupDto,
   updateProductGroupDto,
-} from './dto/product-group.dto';
+} from './dtos/product-group.dto';
 
 @ApiTags('Admin product-group')
 @ApiSecurity('access-token')
