@@ -170,3 +170,39 @@ enum ProviderH2H {
 
   @@map("provider_h2h")
 }
+
+model PaymentMethod {
+  id         String                @id @unique @default(cuid())
+  providerId String                @map("provider_id")
+  provider   PaymentMethodProvider @map("provider")
+  type       PaymentMethodType     @map("type")
+
+  name String  @unique
+  desc String?
+
+  fees          Int    @default(0)
+  feesInPercent String @default("0") @map("fees_in_percent")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("payment_method")
+}
+
+enum PaymentMethodType {
+  TRANSFER_BANK
+  TRANSFER_EWALLET
+  DIRECT_EWALLET
+  VIRTUAL_ACCOUNT
+  RETAIL_OUTLET
+  CREDIT_CARD
+  LINK_PAYMENT
+  OTHER
+
+  @@map("payment_method_type")
+}
+
+enum PaymentMethodProvider {
+  PAYDISINI
+  DUITKU
+}

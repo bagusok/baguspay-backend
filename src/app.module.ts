@@ -7,6 +7,7 @@ import { UsersModule } from './web/users/users.module';
 import { ProductsModule } from './web/products/products.module';
 import { ServicesModule } from './web/services/services.module';
 import { FilePickerModule } from './web/file-picker/file-picker.module';
+import { PaymentMethodModule } from './web/payment-method/payment-method.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { FilePickerModule } from './web/file-picker/file-picker.module';
     ProductsModule,
     ServicesModule,
     FilePickerModule,
+    PaymentMethodModule,
   ],
   controllers: [AppController],
   providers: [AppService],
