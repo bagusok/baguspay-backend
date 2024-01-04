@@ -8,6 +8,9 @@ import { ProductsModule } from './web/products/products.module';
 import { ServicesModule } from './web/services/services.module';
 import { FilePickerModule } from './web/file-picker/file-picker.module';
 import { PaymentMethodModule } from './web/payment-method/payment-method.module';
+import { TransactionModule } from './web/transaction/transaction.module';
+import { PaydisiniModule } from './payment/providers/paydisini/paydisini.module';
+import { PaymentModule } from './payment/payment.module';
 
 @Module({
   imports: [
@@ -18,6 +21,9 @@ import { PaymentMethodModule } from './web/payment-method/payment-method.module'
     ServicesModule,
     FilePickerModule,
     PaymentMethodModule,
+    TransactionModule,
+    PaydisiniModule,
+    PaymentModule,
   ],
   controllers: [AppController],
   providers: [AppService],

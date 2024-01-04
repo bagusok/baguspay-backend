@@ -32,8 +32,9 @@ model User {
   balance Int @default(0)
   point   Int @default(0)
 
-  verifiedAt DateTime?
-  createdAt  DateTime  @default(now())
+  verifiedAt   DateTime?
+  createdAt    DateTime       @default(now())
+  Transactions Transactions[]
 
   @@map("users")
 }
@@ -183,8 +184,11 @@ model PaymentMethod {
   fees          Int    @default(0)
   feesInPercent String @default("0") @map("fees_in_percent")
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  isAvailable Boolean @default(true) @map("is_available")
+
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  Transactions Transactions[]
 
   @@map("payment_method")
 }
@@ -197,6 +201,7 @@ enum PaymentMethodType {
   RETAIL_OUTLET
   CREDIT_CARD
   LINK_PAYMENT
+  QR_CODE
   OTHER
 
   @@map("payment_method_type")
@@ -205,4 +210,75 @@ enum PaymentMethodType {
 enum PaymentMethodProvider {
   PAYDISINI
   DUITKU
+}
+
+model Transactions {
+  id String @id @unique @default(uuid())
+
+  productId      String @map("product_id")
+  productName    String @map("product_name")
+  productService String @map("product_service")
+  productPrice   Int    @map("product_price")
+  productQty     Int    @default(1) @map("product_qty")
+  price          Int    @map("price")
+  fees           Int    @default(0)
+  totalPrice     Int    @map("total_price")
+
+  idPaymentProvider String? @map("id_payment_provider")
+  paymentNumber     String? @map("payment_number")
+  paymentName       String? @map("payment_name")
+  isLinkPayment     Boolean @default(false) @map("is_link_payment")
+  linkPayment       String? @map("link_payment")
+
+  isQrcode Boolean @default(false) @map("is_qrcode")
+  qrData   String? @map("qr_data")
+
+  paidStatus  PaidStatus  @default(PENDING) @map("paid_status")
+  orderStatus OrderStatus @default(PENDING) @map("order_status")
+
+  isRefunded   Boolean      @default(false) @map("is_refund")
+  refundStatus RefundStatus @default(NONE) @map("refund_status")
+
+  user   User?   @relation(fields: [userId], references: [id])
+  userId String? @map("user_id")
+
+  paymentMethod     PaymentMethod?    @relation(fields: [paymentMethodId], references: [id])
+  paymentMethodId   String?           @map("payment_method_id")
+  paymentMethodType PaymentMethodType @map("payment_method_type")
+
+  paidAt DateTime? @map("paid_at")
+  sendAt DateTime? @map("send_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  expiredAt DateTime @map("expired_at")
+}
+
+enum PaidStatus {
+  PENDING
+  PAID
+  CANCELLED
+  EXPIRED
+
+  @@map("paid_status")
+}
+
+enum OrderStatus {
+  PENDING
+  PROCESS
+  SUCCESS
+  FAILED
+  CANCELLED
+
+  @@map("order_status")
+}
+
+enum RefundStatus {
+  NONE
+  PENDING
+  PROCESS
+  SUCCESS
+  FAILED
+
+  @@map("refund_status")
 }
