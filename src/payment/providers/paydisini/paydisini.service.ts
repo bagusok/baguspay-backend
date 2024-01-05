@@ -7,6 +7,7 @@ import {
 } from '@ibnusyawall/paydisini/lib/interfaces/paydisini.interface';
 import { Injectable } from '@nestjs/common';
 import * as crypto from 'crypto';
+import { ICreateTransactionResponse } from './paydisini.types';
 
 @Injectable()
 export class PaydisiniService {
@@ -18,7 +19,9 @@ export class PaydisiniService {
     // this.apiKey = process.env.PAYDISINI_APIKEY;
   }
 
-  async createTransaction(opt: ICreateTransactionParams) {
+  async createTransaction(
+    opt: ICreateTransactionParams,
+  ): Promise<ICreateTransactionResponse> {
     return this.paydisini.createTransaction(opt);
   }
 

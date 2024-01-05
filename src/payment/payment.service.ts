@@ -1,3 +1,7 @@
+import {
+  ICreateTransactionResponse,
+  PaydisniQRISResponse,
+} from './providers/paydisini/paydisini.types';
 import { Injectable } from '@nestjs/common';
 import { PaydisiniService } from './providers/paydisini/paydisini.service';
 import {
@@ -22,7 +26,8 @@ export class PaymentService {
           valid_time: _data.validTime ?? 60 * 60 * 3,
         };
 
-        const create = await this.paydisiniService.createTransaction(data);
+        const create: ICreateTransactionResponse =
+          await this.paydisiniService.createTransaction(data);
 
         if (create.success == false) {
           return null;
@@ -35,9 +40,11 @@ export class PaymentService {
           fee: create.data.fee,
           status: create.data.status,
           expired: create.data.expired,
-          isQrcode: create?.data?.qr_content ? true : false,
+          isQrcode: (create.data as PaydisniQRISResponse).qr_content
+            ? true
+            : false,
           linkPayment: create?.data?.checkout_url ?? null,
-          qrData: create?.data?.qr_content ?? null,
+          qrData: (create.data as PaydisniQRISResponse).qr_content,
         };
 
         break;

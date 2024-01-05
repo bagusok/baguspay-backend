@@ -4,12 +4,11 @@ import {
   InternalServerErrorException,
   Post,
   Req,
-  Res,
   UseGuards,
 } from '@nestjs/common';
 import { ApiSecurity, ApiTags } from '@nestjs/swagger';
 import { TransactionService } from './transaction.service';
-import { Request, Response } from 'express';
+import { Request } from 'express';
 import { createTransactionDto } from './dtos/transaction.dto';
 import { Roles } from 'src/common/roles.decorator';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
@@ -37,8 +36,10 @@ export class TransactionController {
     @Body() body: createTransactionDto,
   ) {
     try {
+      const userId = req.user?.id ?? null;
+
       const transaction = await this.transactionService.createTransaction(
-        null,
+        userId,
         body,
       );
 

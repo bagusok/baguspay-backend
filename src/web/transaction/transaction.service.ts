@@ -43,8 +43,6 @@ export class TransactionService {
         },
       });
 
-      console.log(data.productId);
-
       if (!checkProduct) {
         return {
           status: 503,
@@ -62,8 +60,6 @@ export class TransactionService {
           percentToDesimal * checkProduct.price + checkPaymentMethod.fees,
         );
 
-        console.log(fees);
-
         const createTransaction = await tx.transactions.create({
           data: {
             id: uuid,
@@ -77,6 +73,7 @@ export class TransactionService {
             totalPrice: checkProduct.price + fees,
             productService: 'productService',
             expiredAt: new Date(expiredAt),
+            userId: userId,
           },
         });
 
@@ -102,12 +99,12 @@ export class TransactionService {
           },
           data: {
             expiredAt: new Date(createPayment.expired),
-            fees: createPayment.fee,
-            price: createPayment.amount,
+            fees: Number(createPayment.fee) + Number(fees),
+            price: Number(createPayment.amount),
             isQrcode: createPayment.isQrcode,
             linkPayment: createPayment.linkPayment,
             qrData: createPayment.qrData,
-            totalPrice: createPayment.amount,
+            totalPrice: Number(createPayment.amount),
           },
         });
 
@@ -119,8 +116,6 @@ export class TransactionService {
 
           throw new Error('Failed to update transaction');
         }
-
-        console.log(createPayment);
 
         return updateTransaction;
       });
