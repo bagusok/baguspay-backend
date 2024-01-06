@@ -1,6 +1,7 @@
 import {
   ICreateTransactionResponse,
   PaydisniQRISResponse,
+  PaydisniVirtualAccountResponse,
 } from './providers/paydisini/paydisini.types';
 import { Injectable } from '@nestjs/common';
 import { PaydisiniService } from './providers/paydisini/paydisini.service';
@@ -13,7 +14,9 @@ import {
 export class PaymentService {
   constructor(private readonly paydisiniService: PaydisiniService) {}
 
-  async createPayment(_data: ICreatePaymentParams) {
+  async createPayment(
+    _data: ICreatePaymentParams,
+  ): Promise<IReturnCreatePayment> {
     switch (_data.paymentMethodProvider) {
       case EPaymentMethodProvider.PAYDISINI:
         const data: ICreateTransactionParams = {
@@ -29,17 +32,22 @@ export class PaymentService {
         const create: ICreateTransactionResponse =
           await this.paydisiniService.createTransaction(data);
 
+        console.log(create);
+
         if (create.success == false) {
           return null;
         }
 
         return {
           ref: create.data.unique_code,
-          amount: create.data.amount,
-          balance: create.data.balance,
-          fee: create.data.fee,
+          amount: Number(create.data.amount),
+          balance: Number(create.data.balance),
+          fee: Number(create.data.fee),
           status: create.data.status,
           expired: create.data.expired,
+          pay_code:
+            (create.data as PaydisniVirtualAccountResponse).virtual_account ??
+            null,
           isQrcode: (create.data as PaydisniQRISResponse).qr_content
             ? true
             : false,
@@ -51,11 +59,6 @@ export class PaymentService {
       case EPaymentMethodProvider.DUITKU:
         // return this.paydisiniService.createTransaction(data);
         break;
-      default:
-        return {
-          status: 503,
-          message: 'Payment method not available',
-        };
     }
   }
 
@@ -106,4 +109,17 @@ interface ICancelPaymentParams {
 enum EPaymentMethodProvider {
   PAYDISINI = 'PAYDISINI',
   DUITKU = 'DUITKU',
+}
+
+interface IReturnCreatePayment {
+  ref: string;
+  amount: number;
+  balance: number;
+  fee: number;
+  status: string;
+  expired: string;
+  pay_code?: string;
+  isQrcode: boolean;
+  linkPayment?: string;
+  qrData?: string;
 }

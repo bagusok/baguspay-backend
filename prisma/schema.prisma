@@ -123,15 +123,17 @@ model ProductGroup {
 }
 
 model Products {
-  id            String              @id @unique @default(uuid())
-  name          String
-  desc          String?
-  imgLogo       String?             @map("img_logo")
-  price         Int
-  stock         Int                 @default(100)
-  resellerPrice Int                 @map("reseller_price")
-  type          ServiceType         @default(LAINNYA) @map("type")
-  typeResponse  ProductResponseType @default(DIRECT) @map("type_response")
+  id             String              @id @unique @default(uuid())
+  name           String
+  desc           String?
+  imgLogo        String?             @map("img_logo")
+  profit         Int                 @default(0)
+  price          Int
+  stock          Int                 @default(100)
+  resellerPrice  Int                 @map("reseller_price")
+  profitReseller Int                 @default(0) @map("profit_reseller")
+  type           ServiceType         @default(LAINNYA) @map("type")
+  typeResponse   ProductResponseType @default(DIRECT) @map("type_response")
 
   isAvailable Boolean @default(true)
 
@@ -213,7 +215,8 @@ enum PaymentMethodProvider {
 }
 
 model Transactions {
-  id String @id @unique @default(uuid())
+  id       String  @id @unique @default(uuid())
+  orderRef String? @unique @map("order_ref")
 
   productId      String @map("product_id")
   productName    String @map("product_name")
@@ -224,6 +227,7 @@ model Transactions {
   fees           Int    @default(0)
   totalPrice     Int    @map("total_price")
 
+  paymentRef        String? @map("payment_ref")
   idPaymentProvider String? @map("id_payment_provider")
   paymentNumber     String? @map("payment_number")
   paymentName       String? @map("payment_name")

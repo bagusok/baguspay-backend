@@ -85,3 +85,9 @@ export class updateTransactionDto {
   @IsOptional()
   refundStatus: RefundStatus;
 }
+
+export class cancelTransactionDto {
+  @ApiProperty()
+  @IsString()
+  trxId: string;
+}

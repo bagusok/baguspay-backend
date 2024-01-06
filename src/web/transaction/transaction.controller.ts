@@ -9,10 +9,12 @@ import {
 import { ApiSecurity, ApiTags } from '@nestjs/swagger';
 import { TransactionService } from './transaction.service';
 import { Request } from 'express';
-import { createTransactionDto } from './dtos/transaction.dto';
+import {
+  cancelTransactionDto,
+  createTransactionDto,
+} from './dtos/transaction.dto';
 import { Roles } from 'src/common/roles.decorator';
-import { RolesGuard } from 'src/auth/guards/roles.guard';
-import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { TransactionGuard } from './transaction.guard';
 
 export interface IUserRequest extends Request {
   user: {
@@ -26,7 +28,7 @@ export interface IUserRequest extends Request {
 @ApiSecurity('access-token')
 @Controller('transaction')
 @Roles(['ADMIN', 'USER'])
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(TransactionGuard)
 export class TransactionController {
   constructor(private readonly transactionService: TransactionService) {}
 
@@ -47,6 +49,31 @@ export class TransactionController {
         return {
           status: 500,
           message: 'Failed to create transaction',
+        };
+      }
+
+      return transaction;
+    } catch (error) {
+      return new InternalServerErrorException(error);
+    }
+  }
+
+  @Post('cancel')
+  async cancelTransaction(
+    @Body() body: cancelTransactionDto,
+    @Req() req: IUserRequest,
+  ) {
+    try {
+      const transaction = await this.transactionService.cancelTransaction(
+        req.user?.id ?? null,
+        null,
+        body.trxId,
+      );
+
+      if (!transaction) {
+        return {
+          status: 500,
+          message: 'Failed to cancel transaction',
         };
       }
 
