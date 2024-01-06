@@ -1,7 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import {
+  HttpException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { RegisterDto } from './dtos/register.dto';
-import { CustomException } from 'src/common/custom.exception';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { Role } from '@prisma/client';
@@ -35,10 +38,7 @@ export class AuthService {
     });
 
     if (checkUsername)
-      return new CustomException(
-        403,
-        'Username, email, or phone number already exists',
-      );
+      throw new HttpException('Username or email or phone already exists', 400);
 
     const hashPassword = await bcrypt.hash(password, 10);
 
@@ -53,10 +53,13 @@ export class AuthService {
     });
 
     if (!user) {
-      return new CustomException(500, 'Failed to register user');
+      throw new HttpException('Failed to register user', 500);
     }
 
-    return new CustomException(200, 'User successfully registered', user);
+    return {
+      statusCode: 200,
+      message: 'Register success',
+    };
   }
 
   async login(email: string, password: string) {
@@ -67,13 +70,13 @@ export class AuthService {
     });
 
     if (!user) {
-      return new CustomException(404, 'User not found');
+      throw new HttpException('User not found', 404);
     }
 
     const checkPassword = await bcrypt.compare(password, user.password);
 
     if (!checkPassword) {
-      return new CustomException(403, 'Password is wrong');
+      throw new UnauthorizedException('Email or Password is wrong');
     }
 
     const genJwt = await this.jwtService.signAsync({
@@ -82,9 +85,13 @@ export class AuthService {
       role: user.role,
     });
 
-    return new CustomException(200, 'Login success', {
-      token: genJwt,
-    });
+    return {
+      statusCode: 200,
+      message: 'Login success',
+      data: {
+        token: genJwt,
+      },
+    };
   }
 
   async validateUser(userId: string, username: string, role: IRole) {
