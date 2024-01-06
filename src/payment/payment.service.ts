@@ -32,8 +32,6 @@ export class PaymentService {
         const create: ICreateTransactionResponse =
           await this.paydisiniService.createTransaction(data);
 
-        console.log(create);
-
         if (create.success == false) {
           return null;
         }

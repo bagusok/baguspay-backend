@@ -37,7 +37,7 @@ export class FilePickerController {
     const getList = await this.filePickerService.getAllFiles();
 
     if (!getList) {
-      return new BadRequestException("Can't get list of files");
+      throw new BadRequestException("Can't get list of files");
     }
 
     return res.json({
@@ -69,7 +69,7 @@ export class FilePickerController {
     const upload = await this.filePickerService.uploadFile(file);
 
     if (!upload) {
-      return new BadRequestException("Can't upload file");
+      throw new BadRequestException("Can't upload file");
     }
 
     return res.json({
@@ -87,7 +87,7 @@ export class FilePickerController {
     const deleteFile = await this.filePickerService.deleteFile(key);
 
     if (!deleteFile) {
-      return new BadRequestException("Can't delete file");
+      throw new BadRequestException("Can't delete file");
     }
 
     return res.json({
