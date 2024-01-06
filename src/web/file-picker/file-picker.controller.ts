@@ -27,12 +27,12 @@ import { FileUploadValidationPipe } from 'src/common/file-upload.validation';
 @ApiTags('File Picker')
 @ApiSecurity('access-token')
 @Controller('admin/file-picker')
-@Roles(['ADMIN'])
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class FilePickerController {
   constructor(private readonly filePickerService: FilePickerService) {}
 
   @Get('list')
+  @Roles(['ADMIN'])
   async listFiles(@Res() res: Response) {
     const getList = await this.filePickerService.getAllFiles();
 
@@ -60,6 +60,7 @@ export class FilePickerController {
     },
   })
   @Post('upload')
+  @Roles(['ADMIN'])
   @UseInterceptors(FileInterceptor('file'))
   async uploadFile(
     @Res() res: Response,
@@ -83,6 +84,7 @@ export class FilePickerController {
     description: 'File key',
   })
   @Get('delete/:key')
+  @Roles(['ADMIN'])
   async deleteFile(@Param('key') key: string, @Res() res: Response) {
     const deleteFile = await this.filePickerService.deleteFile(key);
 

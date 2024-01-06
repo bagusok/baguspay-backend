@@ -24,12 +24,12 @@ import {
 @ApiTags('Payment Method')
 @ApiSecurity('access-token')
 @Controller('payment-method')
-@Roles(['ADMIN'])
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class PaymentMethodController {
   constructor(private readonly paymentMethodService: PaymentMethodService) {}
 
   @Get()
+  @Roles(['ADMIN', 'USER', 'RESELLER'])
   async getAllPaymentMethods(@Res() res: Response) {
     const paymentMethods =
       await this.paymentMethodService.getAllPaymentMethods();
@@ -41,6 +41,7 @@ export class PaymentMethodController {
   }
 
   @Post('create')
+  @Roles(['ADMIN'])
   async createPaymentMethod(
     @Req() req: Request,
     @Res() res: Response,
@@ -60,6 +61,7 @@ export class PaymentMethodController {
   }
 
   @Post('update')
+  @Roles(['ADMIN'])
   async updatePaymentMethod(
     @Req() req: Request,
     @Res() res: Response,
@@ -81,6 +83,7 @@ export class PaymentMethodController {
   }
 
   @Post('delete')
+  @Roles(['ADMIN'])
   async deletePaymentMethod(
     @Req() req: Request,
     @Res() res: Response,

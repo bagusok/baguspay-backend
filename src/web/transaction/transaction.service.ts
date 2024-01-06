@@ -1,7 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable } from '@nestjs/common';
 import * as crypto from 'crypto';
 import { PaymentService } from 'src/payment/payment.service';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { EOrderStatus, EPaidStatus } from './dtos/transaction.dto';
 
 @Injectable()
 export class TransactionService {
@@ -10,8 +11,55 @@ export class TransactionService {
     private readonly paymentService: PaymentService,
   ) {}
 
-  async getAllTransactions() {
-    return this.prismaService.transactions.findMany();
+  async getAllTransactions(
+    _userId?: string,
+    userRole?: 'ADMIN' | 'USER' | 'RESELLER' | null,
+    page: number = 1,
+    limit: number = 10,
+    paidStatus?: EPaidStatus,
+    orderStatus?: EOrderStatus,
+    trxId?: string,
+  ) {
+    if (!userRole) throw new ForbiddenException('User role not found');
+
+    const userId = _userId && userRole !== 'ADMIN' && { userId: _userId };
+
+    const skip = (page - 1) * limit;
+
+    const where = {
+      paidStatus: paidStatus,
+      orderStatus: orderStatus,
+      id: trxId,
+      ...userId,
+    };
+
+    const count = await this.prismaService.transactions.count({
+      where,
+    });
+
+    const totalPage = Math.ceil(count / limit);
+
+    const transactions = await this.prismaService.transactions.findMany({
+      where,
+      take: Number(limit),
+      skip,
+      orderBy: {
+        createdAt: 'desc',
+      },
+      include: {
+        paymentMethod: true,
+      },
+    });
+
+    return {
+      status: 200,
+      message: 'Success',
+      data: {
+        count,
+        totalPage,
+        transactions,
+      },
+    };
   }
 
   async getTransactionById(id: string) {

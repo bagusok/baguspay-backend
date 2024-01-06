@@ -23,12 +23,12 @@ import {
 @ApiTags('Admin product-group')
 @ApiSecurity('access-token')
 @Controller('admin/product/product-group')
-@Roles(['ADMIN'])
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class ProductGroupController {
   constructor(private readonly productGroupService: ProductGroupService) {}
 
   @Get()
+  @Roles(['ADMIN'])
   async getProductGroup(@Req() req: Request, @Res() res: Response) {
     const productGroup = await this.productGroupService.findAll();
 
@@ -44,6 +44,7 @@ export class ProductGroupController {
 
   @ApiParam({ name: 'id', type: String })
   @Get(':id')
+  @Roles(['ADMIN'])
   async getProductGroupById(@Req() req: Request, @Res() res: Response) {
     if (!req.params.id) {
       throw new BadRequestException('Param id is required');
@@ -62,6 +63,7 @@ export class ProductGroupController {
   }
 
   @Post('create')
+  @Roles(['ADMIN'])
   async createProductGroup(
     @Req() req: Request,
     @Res() res: Response,
@@ -80,6 +82,7 @@ export class ProductGroupController {
   }
 
   @Post('update')
+  @Roles(['ADMIN'])
   async updateProductGroup(
     @Req() req: Request,
     @Res() res: Response,
@@ -98,6 +101,7 @@ export class ProductGroupController {
   }
 
   @Post('delete')
+  @Roles(['ADMIN'])
   async deleteProductGroup(
     @Req() req: Request,
     @Res() res: Response,

@@ -7,19 +7,21 @@ import {
   IsOptional,
   IsString,
 } from 'class-validator';
+export enum EPaidStatus {
+  PENDING = 'PENDING',
+  PAID = 'PAID',
+  CANCELLED = 'CANCELLED',
+  EXPIRED = 'EXPIRED',
+}
 
-type PaidStatus = 'PENDING' | 'PAID' | 'CANCELLED' | 'EXPIRED';
-type OrderStatus = 'PENDING' | 'PROCESS' | 'SUCCESS' | 'FAILED' | 'CANCELLED';
+export enum EOrderStatus {
+  PENDING = 'PENDING',
+  PROCESS = 'PROCESS',
+  SUCCESS = 'SUCCESS',
+  CANCELLED = 'CANCELLED',
+  FAILED = 'FAILED',
+}
 type RefundStatus = 'NONE' | 'PENDING' | 'PROCESS' | 'SUCCESS' | 'FAILED';
-type PaymentMethodType =
-  | 'TRANSFER_BANK'
-  | 'TRANSFER_EWALLET'
-  | 'DIRECT_EWALLET'
-  | 'VIRTUAL_ACCOUNT'
-  | 'RETAIL_OUTLET'
-  | 'CREDIT_CARD'
-  | 'LINK_PAYMENT'
-  | 'OTHER';
 
 export class createTransactionDto {
   @ApiProperty()
@@ -68,12 +70,12 @@ export class updateTransactionDto {
   @ApiProperty()
   @IsEnum(['PENDING', 'PAID', 'CANCELLED', 'EXPIRED'])
   @IsOptional()
-  paidStatus: PaidStatus;
+  paidStatus: EPaidStatus;
 
   @ApiProperty()
   @IsEnum(['PENDING', 'PROCESS', 'SUCCESS', 'FAILED', 'CANCELLED'])
   @IsOptional()
-  orderStatu: OrderStatus;
+  orderStatu: EOrderStatus;
 
   @ApiProperty()
   @IsBoolean()
@@ -90,4 +92,31 @@ export class cancelTransactionDto {
   @ApiProperty()
   @IsString()
   trxId: string;
+}
+
+export class getAllTransactionsDto {
+  @ApiProperty()
+  @IsString()
+  @IsOptional()
+  page?: number;
+
+  @ApiProperty()
+  @IsString()
+  @IsOptional()
+  limit?: number;
+
+  @ApiProperty()
+  @IsEnum(['PENDING', 'PAID', 'CANCELLED', 'EXPIRED'])
+  @IsOptional()
+  paidStatus?: EPaidStatus;
+
+  @ApiProperty()
+  @IsEnum(['PENDING', 'PROCESS', 'SUCCESS', 'FAILED', 'CANCELLED'])
+  @IsOptional()
+  orderStatus?: EOrderStatus;
+
+  @ApiProperty()
+  @IsString()
+  @IsOptional()
+  trxId?: string;
 }

@@ -24,12 +24,12 @@ import { RolesGuard } from 'src/auth/guards/roles.guard';
 @ApiTags('Admin Products')
 @ApiSecurity('access-token')
 @Controller('admin/products')
-@Roles(['ADMIN'])
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class ProductsController {
   constructor(private readonly productService: ProductsService) {}
 
   @Get()
+  @Roles(['ADMIN'])
   async getProducts(@Req() req: Request, @Res() res: Response) {
     const products = await this.productService.findAll();
 
@@ -44,6 +44,7 @@ export class ProductsController {
   }
 
   @Post('create')
+  @Roles(['ADMIN'])
   async createProduct(
     @Req() req: Request,
     @Res() res: Response,
@@ -61,6 +62,7 @@ export class ProductsController {
   }
 
   @Post('update')
+  @Roles(['ADMIN'])
   async updateProducts(
     @Req() req: Request,
     @Res() res: Response,
@@ -79,6 +81,7 @@ export class ProductsController {
   }
 
   @Post('delete')
+  @Roles(['ADMIN'])
   async deleteProduct(
     @Req() req: Request,
     @Res() res: Response,
@@ -103,6 +106,7 @@ export class ProductsController {
 
   @ApiParam({ name: 'id', type: 'string' })
   @Get(':id')
+  @Roles(['ADMIN'])
   async getProductById(@Req() req: Request, @Res() res: Response) {
     const { id } = req.params;
 

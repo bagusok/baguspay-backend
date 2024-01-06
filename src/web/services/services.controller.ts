@@ -19,12 +19,12 @@ import { createServicesDto, updateServicesDto } from './dtos/services.dto';
 @ApiTags('Services')
 @ApiSecurity('access-token')
 @Controller('services')
-@Roles(['ADMIN'])
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class ServicesController {
   constructor(private readonly servicesService: ServicesService) {}
 
   @Get()
+  @Roles(['ADMIN'])
   async getServices(@Req() req: Request, @Res() res: Response) {
     const services = await this.servicesService.findAll();
 
@@ -40,6 +40,7 @@ export class ServicesController {
 
   @ApiParam({ name: 'id', type: String })
   @Get(':id')
+  @Roles(['ADMIN'])
   async getServicesById(@Req() req: Request, @Res() res: Response) {
     const { id } = req.params;
 
@@ -56,6 +57,7 @@ export class ServicesController {
   }
 
   @Post('create')
+  @Roles(['ADMIN'])
   async createService(
     @Req() req: Request,
     @Res() res: Response,
@@ -74,6 +76,7 @@ export class ServicesController {
   }
 
   @Post('update')
+  @Roles(['ADMIN'])
   async updateService(
     @Req() req: Request,
     @Res() res: Response,
@@ -93,6 +96,7 @@ export class ServicesController {
 
   @ApiParam({ name: 'id', type: String })
   @Get('delete/:id')
+  @Roles(['ADMIN'])
   async deleteService(@Req() req: Request, @Res() res: Response) {
     const { id } = req.params;
 
