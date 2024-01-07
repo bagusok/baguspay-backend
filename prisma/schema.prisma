@@ -123,17 +123,19 @@ model ProductGroup {
 }
 
 model Products {
-  id             String              @id @unique @default(uuid())
-  name           String
-  desc           String?
-  imgLogo        String?             @map("img_logo")
-  profit         Int                 @default(0)
-  price          Int
-  stock          Int                 @default(100)
-  resellerPrice  Int                 @map("reseller_price")
-  profitReseller Int                 @default(0) @map("profit_reseller")
-  type           ServiceType         @default(LAINNYA) @map("type")
-  typeResponse   ProductResponseType @default(DIRECT) @map("type_response")
+  id                      String              @id @unique @default(uuid())
+  name                    String
+  desc                    String?
+  imgLogo                 String?             @map("img_logo")
+  profit                  Int                 @default(0)
+  profitInPercent         String              @default("0") @map("profit_in_percent")
+  price                   Int
+  stock                   Int                 @default(100)
+  resellerPrice           Int                 @map("reseller_price")
+  profitReseller          Int                 @default(0) @map("profit_reseller")
+  profitResellerInPercent String              @default("0") @map("profit_reseller_in_percent")
+  type                    ServiceType         @default(LAINNYA) @map("type")
+  typeResponse            ProductResponseType @default(DIRECT) @map("type_response")
 
   isAvailable Boolean @default(true)
 
@@ -185,6 +187,8 @@ model PaymentMethod {
 
   fees          Int    @default(0)
   feesInPercent String @default("0") @map("fees_in_percent")
+  minAmount     Int    @default(0) @map("min_amount")
+  maxAmount     Int    @default(0) @map("max_amount")
 
   isAvailable Boolean @default(true) @map("is_available")
 
@@ -225,6 +229,7 @@ model Transactions {
   productQty     Int    @default(1) @map("product_qty")
   price          Int    @map("price")
   fees           Int    @default(0)
+  profit         Int    @default(0)
   totalPrice     Int    @map("total_price")
 
   paymentRef        String? @map("payment_ref")
@@ -253,9 +258,21 @@ model Transactions {
   paidAt DateTime? @map("paid_at")
   sendAt DateTime? @map("send_at")
 
+  sourceIp    String?    @map("source")
+  sourceAgent String?    @map("source_agent")
+  sourceType  sourceType @default(WEB) @map("source_type")
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
   expiredAt DateTime @map("expired_at")
+}
+
+enum sourceType {
+  WEB
+  MOBILE
+  API
+
+  @@map("source_type")
 }
 
 enum PaidStatus {
