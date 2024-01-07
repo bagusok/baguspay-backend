@@ -90,7 +90,7 @@ export class TransactionService {
           isAvailable: true,
         },
         include: {
-          ProductCategory: {
+          productGroup: {
             include: {
               Services: {
                 select: {
@@ -135,7 +135,7 @@ export class TransactionService {
             productPrice: checkProduct.price,
             totalPrice: checkProduct.price + fees,
             productService:
-              checkProduct?.ProductCategory?.Services?.name ?? 'Belum ada',
+              checkProduct?.productGroup?.Services?.name ?? 'Belum ada',
             expiredAt: new Date(expiredAt),
             userId: userId,
           },
