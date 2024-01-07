@@ -26,6 +26,10 @@ type RefundStatus = 'NONE' | 'PENDING' | 'PROCESS' | 'SUCCESS' | 'FAILED';
 export class createTransactionDto {
   @ApiProperty()
   @IsString()
+  phone: string;
+
+  @ApiProperty()
+  @IsString()
   productName: string;
 
   @ApiProperty()
@@ -38,7 +42,8 @@ export class createTransactionDto {
 
   @ApiProperty()
   @IsNumber()
-  productQty: number;
+  @IsOptional()
+  productQty: number = 1;
 
   @ApiProperty()
   @IsNumber()

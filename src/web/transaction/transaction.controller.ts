@@ -70,25 +70,9 @@ export class TransactionController {
     @Req() req: IUserRequest,
     @Body() body: createTransactionDto,
   ) {
-    try {
-      const userId = req.user?.id ?? null;
+    const userId = req.user?.id ?? null;
 
-      const transaction = await this.transactionService.createTransaction(
-        userId,
-        body,
-      );
-
-      if (!transaction) {
-        return {
-          status: 500,
-          message: 'Failed to create transaction',
-        };
-      }
-
-      return transaction;
-    } catch (error) {
-      return new InternalServerErrorException(error);
-    }
+    return await this.transactionService.createTransaction(userId, body);
   }
 
   @Post('cancel')

@@ -1,8 +1,16 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import * as crypto from 'crypto';
 import { PaymentService } from 'src/payment/payment.service';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { EOrderStatus, EPaidStatus } from './dtos/transaction.dto';
+import {
+  EOrderStatus,
+  EPaidStatus,
+  createTransactionDto,
+} from './dtos/transaction.dto';
 
 @Injectable()
 export class TransactionService {
@@ -68,7 +76,12 @@ export class TransactionService {
     });
   }
 
-  async createTransaction(userId: string, data: any) {
+  async createTransaction(userId: string, data: createTransactionDto) {
+    let time = 0;
+    const setTime = setInterval(() => {
+      time++;
+    }, 1000);
+
     try {
       const checkPaymentMethod =
         await this.prismaService.paymentMethod.findFirst({
@@ -102,8 +115,6 @@ export class TransactionService {
         },
       });
 
-      console.log(checkProduct);
-
       if (!checkProduct) {
         return {
           status: 503,
@@ -111,88 +122,122 @@ export class TransactionService {
         };
       }
 
-      const transaction = await this.prismaService.$transaction(async (tx) => {
-        const expiredAt = new Date().getTime() + 1000 * 60 * 60 * 2;
+      if (checkProduct.stock < 1 || checkProduct.stock < data.productQty) {
+        return {
+          status: 503,
+          message: 'Product stock is empty',
+        };
+      }
 
-        const trxId = await this.generateTransactionId();
+      const transaction = await this.prismaService.$transaction(
+        async (tx) => {
+          const expiredAt = new Date().getTime() + 1000 * 60 * 60 * 2;
 
-        const percentToDesimal = Number(checkPaymentMethod.feesInPercent) / 100;
-        const fees = Math.round(
-          percentToDesimal * checkProduct.price + checkPaymentMethod.fees,
-        );
+          const trxId = await this.generateTransactionId();
 
-        const createTransaction = await tx.transactions.create({
-          data: {
-            id: trxId,
-            price: checkProduct.price,
-            fees: fees,
-            productName: checkProduct.name,
-            productId: checkProduct.id,
-            paymentName: checkPaymentMethod.name,
-            idPaymentProvider: checkPaymentMethod.providerId,
-            paymentMethodType: checkPaymentMethod.type,
-            paymentMethodId: checkPaymentMethod.id,
-            productPrice: checkProduct.price,
-            totalPrice: checkProduct.price + fees,
-            productService:
-              checkProduct?.productGroup?.Services?.name ?? 'Belum ada',
-            expiredAt: new Date(expiredAt),
-            userId: userId,
-          },
-        });
+          const percentToDesimal =
+            Number(checkPaymentMethod.feesInPercent) / 100;
+          const fees = Math.round(
+            percentToDesimal * checkProduct.price + checkPaymentMethod.fees,
+          );
 
-        if (!createTransaction) {
-          throw new Error('Failed to create transaction');
-        }
+          const price = checkProduct.price * data.productQty;
+          const totalPrice = price + fees;
 
-        const createPayment = await this.paymentService.createPayment({
-          amount: createTransaction.totalPrice,
-          description: createTransaction.productName,
-          idPaymentMethodProvider: checkPaymentMethod.providerId,
-          paymentMethodProvider: checkPaymentMethod.provider,
-          trxId: createTransaction.id,
-        });
+          if (
+            totalPrice <= checkPaymentMethod.minAmount ||
+            totalPrice >= checkPaymentMethod.maxAmount
+          )
+            throw new Error('Payment method not available');
 
-        if (!createPayment) {
-          throw new Error('Failed to create payment');
-        }
-
-        const updateTransaction = await tx.transactions.update({
-          where: {
-            id: createTransaction.id,
-          },
-          data: {
-            expiredAt: new Date(createPayment.expired),
-            fees: Number(createPayment.fee) + Number(fees),
-            price: checkProduct.price,
-            isQrcode: createPayment.isQrcode,
-            linkPayment: createPayment.linkPayment,
-            qrData: createPayment.qrData,
-            totalPrice: Number(createPayment.amount),
-            paymentRef: createPayment.ref,
-          },
-        });
-
-        if (!updateTransaction) {
-          await this.paymentService.cancelPayment({
-            trxId: createTransaction.id,
-            paymentMethodProvider: checkPaymentMethod.provider,
+          const createTransaction = await tx.transactions.create({
+            data: {
+              id: trxId,
+              price: price,
+              productQty: data.productQty,
+              fees: fees,
+              productName: checkProduct.name,
+              productId: checkProduct.id,
+              paymentName: checkPaymentMethod.name,
+              idPaymentProvider: checkPaymentMethod.providerId,
+              paymentMethodType: checkPaymentMethod.type,
+              paymentMethodId: checkPaymentMethod.id,
+              productPrice: checkProduct.price,
+              totalPrice: price + fees,
+              productService:
+                checkProduct?.productGroup?.Services?.name ?? 'Nothing',
+              expiredAt: new Date(expiredAt),
+              userId: userId,
+            },
           });
 
-          throw new Error('Failed to update transaction');
-        }
+          if (!createTransaction) {
+            throw new Error('Failed to create transaction');
+          }
 
-        return updateTransaction;
-      });
+          const createPayment = await this.paymentService.createPayment({
+            amount: createTransaction.totalPrice,
+            description: createTransaction.productName,
+            idPaymentMethodProvider: checkPaymentMethod.providerId,
+            paymentMethodProvider: checkPaymentMethod.provider,
+            trxId: createTransaction.id,
+            phone: data?.phone,
+          });
+
+          if (!createPayment) {
+            throw new Error('Failed to create payment');
+          }
+
+          const profit =
+            createPayment.amount -
+            createPayment.fee -
+            checkProduct.priceFromProvider * data.productQty;
+
+          console.log(profit);
+
+          const updateTransaction = await tx.transactions.update({
+            where: {
+              id: createTransaction.id,
+            },
+            data: {
+              expiredAt: new Date(createPayment.expired),
+              fees: Number(createPayment.fee) + Number(fees),
+              profit: profit,
+              price: price,
+              paymentNumber: createPayment.pay_code,
+              isQrcode: createPayment.isQrcode,
+              linkPayment: createPayment.linkPayment,
+              qrData: createPayment.qrData,
+              totalPrice: Number(createPayment.amount),
+              paymentRef: createPayment.ref,
+            },
+          });
+
+          if (!updateTransaction) {
+            await this.paymentService.cancelPayment({
+              trxId: createTransaction.id,
+              paymentMethodProvider: checkPaymentMethod.provider,
+            });
+
+            throw new Error('Failed to update transaction');
+          }
+
+          return updateTransaction;
+        },
+        { timeout: 10000 },
+      );
+
+      clearInterval(setTime);
 
       return {
-        status: 200,
+        statusCode: 200,
         message: 'Success',
+        time: time + 's',
         data: transaction,
       };
     } catch (error) {
-      console.log(error);
-      return null;
+      clearInterval(setTime);
+      throw new InternalServerErrorException(error.message);
     }
   }
 
