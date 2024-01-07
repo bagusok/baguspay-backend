@@ -37,17 +37,29 @@ export class CreateProductDto {
   @ApiProperty()
   imgLogo: string;
 
-  @IsNumber()
   @ApiProperty()
-  price: number;
+  @IsNumber()
+  priceFromProvider: number;
+
+  @ApiProperty()
+  @IsNumber()
+  profit: number = 0;
+
+  @ApiProperty()
+  @IsNumber()
+  profitInPercent: number = 0;
+
+  @ApiProperty()
+  @IsNumber()
+  profitReseller: number = 0;
+
+  @ApiProperty()
+  @IsNumber()
+  profitResellerInPercent: number = 0;
 
   @IsNumber()
   @ApiProperty()
   stock: number;
-
-  @IsNumber()
-  @ApiProperty()
-  resellerPrice: number;
 
   @IsEnum([
     'GAME_DIRECT',
@@ -80,13 +92,9 @@ export class CreateProductDto {
   @ApiProperty()
   idProductProvider: string;
 
-  @IsNumber()
-  @ApiProperty()
-  priceFromProvider: number;
-
   @IsString()
   @ApiProperty()
-  productCategoryId: string;
+  productGroupId: string;
 }
 
 export class UpdateProductDto {
@@ -112,17 +120,27 @@ export class UpdateProductDto {
   @IsNumber()
   @IsOptional()
   @ApiProperty()
-  price: number;
-
-  @IsNumber()
-  @IsOptional()
-  @ApiProperty()
   stock: number;
 
-  @IsNumber()
-  @IsOptional()
   @ApiProperty()
-  resellerPrice: number;
+  @IsNumber()
+  priceFromProvider: number;
+
+  @ApiProperty()
+  @IsNumber()
+  profit: number = 0;
+
+  @ApiProperty()
+  @IsNumber()
+  profitInPercent: number = 0;
+
+  @ApiProperty()
+  @IsNumber()
+  profitReseller: number = 0;
+
+  @ApiProperty()
+  @IsNumber()
+  profitResellerInPercent: number = 0;
 
   @IsEnum([
     'GAME_DIRECT',
@@ -159,15 +177,10 @@ export class UpdateProductDto {
   @ApiProperty()
   idProductProvider: string;
 
-  @IsNumber()
-  @IsOptional()
-  @ApiProperty()
-  priceFromProvider: number;
-
   @IsString()
   @IsOptional()
   @ApiProperty()
-  productCategoryId: string;
+  productGroupId: string;
 }
 
 export class DeleteProductDto {

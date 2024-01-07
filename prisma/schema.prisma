@@ -128,12 +128,12 @@ model Products {
   desc                    String?
   imgLogo                 String?             @map("img_logo")
   profit                  Int                 @default(0)
-  profitInPercent         String              @default("0") @map("profit_in_percent")
+  profitInPercent         Int                 @default(0) @map("profit_in_percent")
   price                   Int
   stock                   Int                 @default(100)
   resellerPrice           Int                 @map("reseller_price")
   profitReseller          Int                 @default(0) @map("profit_reseller")
-  profitResellerInPercent String              @default("0") @map("profit_reseller_in_percent")
+  profitResellerInPercent Int                 @default(0) @map("profit_reseller_in_percent")
   type                    ServiceType         @default(LAINNYA) @map("type")
   typeResponse            ProductResponseType @default(DIRECT) @map("type_response")
 
