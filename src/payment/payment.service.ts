@@ -1,6 +1,7 @@
 import {
   ICreateTransactionResponse,
   PaydisniQRISResponse,
+  PaydisniRetailResponse,
   PaydisniVirtualAccountResponse,
 } from './providers/paydisini/paydisini.types';
 import { Injectable } from '@nestjs/common';
@@ -32,6 +33,8 @@ export class PaymentService {
         const create: ICreateTransactionResponse =
           await this.paydisiniService.createTransaction(data);
 
+        console.log(create);
+
         if (create.success == false) {
           return null;
         }
@@ -44,13 +47,14 @@ export class PaymentService {
           status: create.data.status,
           expired: create.data.expired,
           pay_code:
-            (create.data as PaydisniVirtualAccountResponse).virtual_account ??
+            ((create.data as PaydisniVirtualAccountResponse).virtual_account ||
+              (create.data as PaydisniRetailResponse).payment_code) ??
             null,
           isQrcode: (create.data as PaydisniQRISResponse).qr_content
             ? true
             : false,
           linkPayment: create?.data?.checkout_url ?? null,
-          qrData: (create.data as PaydisniQRISResponse).qr_content,
+          qrData: (create.data as PaydisniQRISResponse).qr_content ?? null,
         };
 
         break;

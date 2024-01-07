@@ -1,11 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import {
-  IsEnum,
-  IsNumber,
-  IsNumberString,
-  IsOptional,
-  IsString,
-} from 'class-validator';
+import { IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
 
 type PaymentMethodProvider = 'PAYDISINI' | 'DUITKU';
 type PaymentMethodType =
@@ -54,13 +48,20 @@ export class CreatePaymentMethodDto {
   fees: number;
 
   @ApiProperty()
-  @IsNumberString()
-  feesInPercent: string;
+  @IsNumber()
+  feesInPercent: number = 0;
+
+  @ApiProperty()
+  @IsNumber()
+  minAmount: number;
+
+  @ApiProperty()
+  @IsNumber()
+  maxAmount: number;
 }
 
 export class UpdatePaymentMethodDto {
   @IsString()
-  @IsOptional()
   id: string;
 
   @ApiProperty()
@@ -103,9 +104,17 @@ export class UpdatePaymentMethodDto {
   fees: number;
 
   @ApiProperty()
-  @IsNumberString()
+  @IsNumber()
   @IsOptional()
-  feesInPercent: string;
+  feesInPercent: number = 0;
+
+  @ApiProperty()
+  @IsNumber()
+  minAmount: number;
+
+  @ApiProperty()
+  @IsNumber()
+  maxAmount: number;
 }
 
 export class DeletePaymentMethodDto {
