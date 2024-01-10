@@ -1,6 +1,5 @@
 import { Paydisini } from '@ibnusyawall/paydisini';
 import {
-  ICallbackStatusParams,
   ICancelTransactionParams,
   ICheckTransactionParams,
   ICreateTransactionParams,
@@ -8,6 +7,7 @@ import {
 import { Injectable } from '@nestjs/common';
 import * as crypto from 'crypto';
 import { ICreateTransactionResponse } from './paydisini.types';
+import { ICallbackPaymentParams } from 'src/payment/payment.service';
 
 @Injectable()
 export class PaydisiniService {
@@ -63,16 +63,28 @@ export class PaydisiniService {
     return this.paydisini.checkTransaction(opt);
   }
 
-  async callbackStatus(opt: ICallbackStatusParams) {
-    return this.paydisini.callbackStatus(opt);
+  callbackVerify(opt: ICallbackPaymentParams): {
+    success: boolean;
+  } {
+    const concatString = this.paydisini.key + opt.trxId + 'CallbackStatus';
+    const md5Hash = crypto.createHash('md5').update(concatString).digest('hex');
+
+    if (md5Hash == opt.sign) {
+      return {
+        success: true,
+      };
+    } else {
+      return {
+        success: false,
+      };
+    }
   }
-  private generateMD5(key, unique_code, service, amount, valid_time) {
-    const concatenatedString =
-      key + unique_code + service + amount + valid_time + 'NewTransaction';
-    const md5Hash = crypto
-      .createHash('md5')
-      .update(concatenatedString)
-      .digest('hex');
-    return md5Hash;
-  }
+}
+
+export interface ICallbackPaydisiniParams {
+  key: string;
+  pay_id: string;
+  unique_code: string;
+  status: 'Success' | 'Canceled';
+  signature: string;
 }

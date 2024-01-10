@@ -33,8 +33,6 @@ export class PaymentService {
         const create: ICreateTransactionResponse =
           await this.paydisiniService.createTransaction(data);
 
-        console.log(create);
-
         if (create.success == false) {
           return null;
         }
@@ -89,6 +87,27 @@ export class PaymentService {
         break;
     }
   }
+
+  async handleCallbackPayment(
+    data: ICallbackPaymentParams,
+  ): Promise<IReturnCallbackPayment | null> {
+    switch (data.paymentMethodProvider) {
+      case EPaymentMethodProvider.PAYDISINI:
+        const verify = this.paydisiniService.callbackVerify(data);
+
+        if (verify.success == false) {
+          return null;
+        }
+
+        return {
+          ref: data.trxId,
+          status: data.trxStatus,
+          success: true,
+        };
+
+        break;
+    }
+  }
 }
 
 interface ICreatePaymentParams {
@@ -108,6 +127,16 @@ interface ICancelPaymentParams {
   paymentMethodProvider?: 'PAYDISINI' | 'DUITKU';
 }
 
+export interface ICallbackPaymentParams {
+  trxId?: string;
+  trxRef?: string;
+  trxAmount?: number;
+  trxStatus?: string;
+  trxDatetime?: string;
+  paymentMethodProvider?: 'PAYDISINI' | 'DUITKU';
+  sign?: string;
+}
+
 enum EPaymentMethodProvider {
   PAYDISINI = 'PAYDISINI',
   DUITKU = 'DUITKU',
@@ -124,4 +153,14 @@ interface IReturnCreatePayment {
   isQrcode: boolean;
   linkPayment?: string;
   qrData?: string;
+}
+
+interface IReturnCallbackPayment {
+  success: boolean;
+  ref: string;
+  amount?: number;
+  balance?: number;
+  fee?: number;
+  status?: string;
+  date?: string;
 }
