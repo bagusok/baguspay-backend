@@ -96,4 +96,35 @@ export class ServiceGroupService {
       throw new InternalServerErrorException(err);
     }
   }
+
+  async findAllByUser() {
+    try {
+      const get = await this.prismaService.serviceGroup.findMany({
+        include: {
+          services: {
+            where: {
+              isAvailable: true,
+            },
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              imgLogo: true,
+            },
+          },
+        },
+        orderBy: {
+          orderNo: 'asc',
+        },
+      });
+
+      return {
+        statusCode: 200,
+        message: 'Success',
+        data: get,
+      };
+    } catch (err) {
+      throw new InternalServerErrorException(err);
+    }
+  }
 }

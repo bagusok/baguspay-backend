@@ -112,4 +112,19 @@ export class ServicesService {
       throw new NotFoundException('Service not found');
     }
   }
+
+  async findAllByUser() {
+    try {
+      return await this.prismaService.services.findMany({
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          imgLogo: true,
+        },
+      });
+    } catch (error) {
+      throw new InternalServerErrorException(error);
+    }
+  }
 }

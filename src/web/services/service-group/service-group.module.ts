@@ -7,5 +7,6 @@ import { PrismaModule } from 'src/prisma/prisma.module';
   providers: [ServiceGroupService],
   controllers: [ServiceGroupController],
   imports: [PrismaModule],
+  exports: [ServiceGroupService],
 })
 export class ServiceGroupModule {}
