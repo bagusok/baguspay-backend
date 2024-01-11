@@ -1,4 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 
@@ -11,7 +15,7 @@ export class ServicesService {
       return await this.prismaService.services.findMany();
     } catch (e) {
       console.log(e);
-      return null;
+      throw new InternalServerErrorException('Error getting services');
     }
   }
 
@@ -21,10 +25,17 @@ export class ServicesService {
         where: {
           id,
         },
+        include: {
+          productGroup: {
+            include: {
+              products: true,
+            },
+          },
+        },
       });
     } catch (e) {
       console.log(e);
-      return null;
+      throw new InternalServerErrorException('Error getting services');
     }
   }
 
@@ -63,6 +74,42 @@ export class ServicesService {
     } catch (e) {
       console.log(e);
       return null;
+    }
+  }
+
+  async findServicesBySlug(slug: string) {
+    try {
+      return await this.prismaService.services.findUniqueOrThrow({
+        where: {
+          slug,
+        },
+        include: {
+          productGroup: {
+            include: {
+              products: {
+                orderBy: {
+                  price: 'asc',
+                },
+                select: {
+                  id: true,
+                  name: true,
+                  price: true,
+                  desc: true,
+                  cutOffStart: true,
+                  cutOffEnd: true,
+                  isAvailable: true,
+                  stock: true,
+                  createdAt: true,
+                  imgLogo: true,
+                },
+              },
+            },
+          },
+        },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new NotFoundException('Service not found');
     }
   }
 }

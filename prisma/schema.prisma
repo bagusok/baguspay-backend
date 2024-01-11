@@ -73,8 +73,8 @@ model Services {
   inputFieldThreeType   InputFieldType @default(TEXT) @map("input_field_three_type")
   inputFieldThreeOption Json?          @map("input_field_three_option")
 
-  region          Region         @default(GLOBAL)
-  productCategory ProductGroup[]
+  region       Region         @default(GLOBAL)
+  productGroup ProductGroup[]
 
   metaName String? @map("meta_name")
   metaDesc String? @map("meta_desc")
