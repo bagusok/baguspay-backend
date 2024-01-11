@@ -80,10 +80,27 @@ model Services {
   metaDesc String? @map("meta_desc")
   metaTags String? @map("meta_tags")
 
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  ServiceGroup ServiceGroup[]
+
+  @@map("services")
+}
+
+model ServiceGroup {
+  id      String  @id @unique @default(uuid())
+  name    String  @unique
+  desc    String?
+  imgLogo String? @map("img_logo")
+
+  orderNo Int @default(autoincrement()) @map("order_no")
+
+  services Services[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@map("services")
+  @@map("service_group")
 }
 
 enum ServiceType {

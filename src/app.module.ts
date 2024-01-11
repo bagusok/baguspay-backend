@@ -12,6 +12,7 @@ import { TransactionModule } from './web/transaction/transaction.module';
 import { PaydisiniModule } from './payment/providers/paydisini/paydisini.module';
 import { PaymentModule } from './payment/payment.module';
 import { CallbackModule } from './web/callback/callback.module';
+import { ServiceGroupModule } from './web/services/service-group/service-group.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { CallbackModule } from './web/callback/callback.module';
     PaydisiniModule,
     PaymentModule,
     CallbackModule,
+    ServiceGroupModule,
   ],
   controllers: [AppController],
   providers: [AppService],
