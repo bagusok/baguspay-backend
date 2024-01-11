@@ -10,6 +10,7 @@ type PaymentMethodType =
   | 'RETAIL_OUTLET'
   | 'CREDIT_CARD'
   | 'LINK_PAYMENT'
+  | 'QR_CODE'
   | 'OTHER';
 
 export class CreatePaymentMethodDto {
@@ -30,6 +31,7 @@ export class CreatePaymentMethodDto {
     'RETAIL_OUTLET',
     'CREDIT_CARD',
     'LINK_PAYMENT',
+    'QR_CODE',
     'OTHER',
   ])
   type: PaymentMethodType;

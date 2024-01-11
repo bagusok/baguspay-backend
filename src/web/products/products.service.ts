@@ -35,10 +35,18 @@ export class ProductsService {
       _data.profitReseller +
       _data.priceFromProvider * (_data.profitResellerInPercent / 100);
 
+    const productGroupId = _data.productGroupId;
+    delete _data.productGroupId;
+
     const data: Prisma.ProductsCreateInput = {
       ..._data,
       price,
       resellerPrice,
+      productGroup: {
+        connect: {
+          id: productGroupId,
+        },
+      },
     };
 
     return await this.prismaService.products.create({

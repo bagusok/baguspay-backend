@@ -150,7 +150,7 @@ model Products {
   productGroup   ProductGroup? @relation(fields: [productGroupId], references: [id])
   productGroupId String?
 
-  cutOffstart String @default("00:00") @map("cut_off_start")
+  cutOffStart String @default("00:00") @map("cut_off_start")
   cutOffEnd   String @default("00:00") @map("cut_off_end")
 
   createdAt DateTime @default(now())
@@ -200,7 +200,7 @@ model PaymentMethod {
   isAvailable      Boolean @default(true) @map("is_available")
   expiredInMinutes Int?    @default(30) @map("expired_in_minutes")
 
-  cutOffstart String @default("00:00") @map("cut_off_start")
+  cutOffStart String @default("00:00") @map("cut_off_start")
   cutOffEnd   String @default("00:00") @map("cut_off_end")
 
   createdAt    DateTime       @default(now())

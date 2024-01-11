@@ -118,7 +118,7 @@ export class createServicesDto {
   @IsString()
   @ApiProperty()
   @IsOptional()
-  metaTitle: string;
+  metaName: string;
 
   @IsString()
   @ApiProperty()
@@ -246,7 +246,7 @@ export class updateServicesDto {
   @IsString()
   @ApiProperty()
   @IsOptional()
-  metaTitle: string;
+  metaName: string;
 
   @IsString()
   @ApiProperty()
