@@ -114,6 +114,21 @@ export class createServicesDto {
   @ApiProperty()
   @IsEnum(['GLOBAL', 'INDONESIA', 'MALAYSIA', 'SINGAPORE'])
   region: Region;
+
+  @IsString()
+  @ApiProperty()
+  @IsOptional()
+  metaTitle: string;
+
+  @IsString()
+  @ApiProperty()
+  @IsOptional()
+  metaDesc: string;
+
+  @IsString()
+  @ApiProperty()
+  @IsOptional()
+  metaTags: string;
 }
 
 export class updateServicesDto {
@@ -227,6 +242,21 @@ export class updateServicesDto {
   @IsEnum(['GLOBAL', 'INDONESIA', 'MALAYSIA', 'SINGAPORE'])
   @IsOptional()
   region: Region;
+
+  @IsString()
+  @ApiProperty()
+  @IsOptional()
+  metaTitle: string;
+
+  @IsString()
+  @ApiProperty()
+  @IsOptional()
+  metaDesc: string;
+
+  @IsString()
+  @ApiProperty()
+  @IsOptional()
+  metaTags: string;
 }
 
 export class deleteServicesDto {

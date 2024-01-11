@@ -95,6 +95,16 @@ export class CreateProductDto {
   @IsString()
   @ApiProperty()
   productGroupId: string;
+
+  @IsString()
+  @ApiProperty()
+  @IsOptional()
+  cutOffStart: string;
+
+  @IsString()
+  @ApiProperty()
+  @IsOptional()
+  cutOffEnd: string;
 }
 
 export class UpdateProductDto {
@@ -181,6 +191,16 @@ export class UpdateProductDto {
   @IsOptional()
   @ApiProperty()
   productGroupId: string;
+
+  @IsString()
+  @ApiProperty()
+  @IsOptional()
+  cutOffStart: string;
+
+  @IsString()
+  @ApiProperty()
+  @IsOptional()
+  cutOffEnd: string;
 }
 
 export class DeleteProductDto {
