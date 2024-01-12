@@ -25,7 +25,7 @@ export class PaymentService {
           note: _data.description,
           service: parseInt(_data.idPaymentMethodProvider),
           unique_code: _data.trxId,
-          type_fee: 1,
+          type_fee: 2,
           ewallet_phone: _data.phone ?? '0',
           valid_time: _data.validTime ?? 60 * 60 * 3,
         };
@@ -36,6 +36,8 @@ export class PaymentService {
         if (create.success == false) {
           return null;
         }
+
+        console.log(create.data);
 
         return {
           ref: create.data.unique_code,

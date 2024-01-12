@@ -1,13 +1,16 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { UpdatePaymentMethodDto } from './dtos/payment-method.dto';
 
 @Injectable()
 export class PaymentMethodService {
   constructor(private readonly prismaService: PrismaService) {}
 
   async getAllPaymentMethods() {
-    return this.prismaService.paymentMethod.findMany();
+    const data = await this.prismaService.paymentMethod.findMany();
+
+    return data;
   }
 
   async getPaymentMethodById(id: string) {
@@ -17,12 +20,12 @@ export class PaymentMethodService {
   }
 
   async createPaymentMethod(data: Prisma.PaymentMethodCreateInput) {
-    return this.prismaService.paymentMethod.create({
+    return await this.prismaService.paymentMethod.create({
       data,
     });
   }
 
-  async updatePaymentMethod(id: string, data: Prisma.PaymentMethodUpdateInput) {
+  async updatePaymentMethod(id: string, data: UpdatePaymentMethodDto) {
     const check = await this.getPaymentMethodById(id);
 
     if (!check) {
@@ -48,6 +51,6 @@ export class PaymentMethodService {
   }
 
   async deleteManyPaymentMethods() {
-    return this.prismaService.paymentMethod.deleteMany();
+    return await this.prismaService.paymentMethod.deleteMany();
   }
 }

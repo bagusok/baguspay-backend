@@ -135,13 +135,15 @@ export class TransactionService {
 
           const trxId = await this.generateTransactionId();
 
+          const price = checkProduct.price * data.productQty;
           const percentToDesimal =
             Number(checkPaymentMethod.feesInPercent) / 100;
           const fees = Math.round(
-            percentToDesimal * checkProduct.price + checkPaymentMethod.fees,
+            percentToDesimal * price + checkPaymentMethod.fees,
           );
 
-          const price = checkProduct.price * data.productQty;
+          console.log(price, fees);
+
           const totalPrice = price + fees;
 
           if (
@@ -189,11 +191,9 @@ export class TransactionService {
           }
 
           const profit =
-            createPayment.amount -
+            totalPrice -
             createPayment.fee -
             checkProduct.priceFromProvider * data.productQty;
-
-          console.log(profit);
 
           const updateTransaction = await tx.transactions.update({
             where: {
@@ -201,7 +201,7 @@ export class TransactionService {
             },
             data: {
               expiredAt: new Date(createPayment.expired),
-              fees: Number(createPayment.fee) + Number(fees),
+              fees: Number(createPayment.fee),
               profit: profit,
               price: price,
               paymentNumber: createPayment.pay_code,
