@@ -50,8 +50,8 @@ export class CreatePaymentMethodDto {
   fees: number;
 
   @ApiProperty()
-  @IsNumber()
-  feesInPercent: number = 0;
+  @IsString()
+  feesInPercent: string;
 
   @ApiProperty()
   @IsNumber()
@@ -106,9 +106,9 @@ export class UpdatePaymentMethodDto {
   fees: number;
 
   @ApiProperty()
-  @IsNumber()
+  @IsString()
   @IsOptional()
-  feesInPercent: number = 0;
+  feesInPercent: string;
 
   @ApiProperty()
   @IsNumber()

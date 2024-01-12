@@ -209,10 +209,10 @@ model PaymentMethod {
   name String  @unique
   desc String?
 
-  fees          Int @default(0)
-  feesInPercent Int @default(0) @map("fees_in_percent")
-  minAmount     Int @default(0) @map("min_amount")
-  maxAmount     Int @default(0) @map("max_amount")
+  fees          Int    @default(0)
+  feesInPercent String @default("0") @map("fees_in_percent")
+  minAmount     Int    @default(0) @map("min_amount")
+  maxAmount     Int    @default(0) @map("max_amount")
 
   isAvailable      Boolean @default(true) @map("is_available")
   expiredInMinutes Int?    @default(30) @map("expired_in_minutes")
