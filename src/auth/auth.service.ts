@@ -70,7 +70,7 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new HttpException('User not found', 404);
+      throw new HttpException('Email or Password is Wrong', 404);
     }
 
     const checkPassword = await bcrypt.compare(password, user.password);

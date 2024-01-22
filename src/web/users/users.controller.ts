@@ -35,4 +35,12 @@ export class UsersController {
       data: get,
     });
   }
+
+  @Get('/ping')
+  @Roles(['ADMIN', 'USER'])
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  async ping(@Req() req: Request) {
+    console.log(req.user);
+    return await this.usersService.findUser(req.user);
+  }
 }
