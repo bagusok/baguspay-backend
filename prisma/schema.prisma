@@ -331,3 +331,18 @@ enum RefundStatus {
 
   @@map("refund_status")
 }
+
+model BannerSlider {
+  id      String  @id @unique @default(cuid())
+  name    String  @unique
+  img     String
+  link    String?
+  orderNo Int     @default(autoincrement()) @map("order_no")
+
+  isAvailable Boolean @default(true) @map("is_available")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("banner_slider")
+}
