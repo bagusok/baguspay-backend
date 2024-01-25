@@ -41,6 +41,11 @@ export class createServicesDto {
   imgBanner: string;
 
   @ApiProperty()
+  @IsString()
+  @IsOptional()
+  publisher: string;
+
+  @ApiProperty()
   @IsEnum([
     'GAME_DIRECT',
     'GAME_VOUCHER',
@@ -74,6 +79,11 @@ export class createServicesDto {
   isInputFieldOne: boolean;
 
   @ApiProperty()
+  @IsString()
+  @IsOptional()
+  inputFieldOneLabel: string;
+
+  @ApiProperty()
   @IsEnum(['TEXT', 'SELECT', 'NUMBER'])
   @IsOptional()
   inputFieldOneType: InputFieldType;
@@ -88,6 +98,11 @@ export class createServicesDto {
   isInputFieldTwo: boolean;
 
   @ApiProperty()
+  @IsString()
+  @IsOptional()
+  inputFieldTwoLabel: string;
+
+  @ApiProperty()
   @IsEnum(['TEXT', 'SELECT', 'NUMBER'])
   @IsOptional()
   inputFieldTwoType: InputFieldType;
@@ -100,6 +115,11 @@ export class createServicesDto {
   @ApiProperty()
   @IsBoolean()
   isInputFieldThree: boolean;
+
+  @ApiProperty()
+  @IsString()
+  @IsOptional()
+  inputFieldThreeLabel: string;
 
   @ApiProperty()
   @IsEnum(['TEXT', 'SELECT', 'NUMBER'])
@@ -162,6 +182,11 @@ export class updateServicesDto {
   imgBanner: string;
 
   @ApiProperty()
+  @IsString()
+  @IsOptional()
+  publisher: string;
+
+  @ApiProperty()
   @IsEnum([
     'GAME_DIRECT',
     'GAME_VOUCHER',
@@ -199,6 +224,11 @@ export class updateServicesDto {
   isInputFieldOne: boolean;
 
   @ApiProperty()
+  @IsString()
+  @IsOptional()
+  inputFieldOneLabel: string;
+
+  @ApiProperty()
   @IsEnum(['TEXT', 'SELECT', 'NUMBER'])
   @IsOptional()
   inputFieldOneType: InputFieldType;
@@ -214,6 +244,11 @@ export class updateServicesDto {
   isInputFieldTwo: boolean;
 
   @ApiProperty()
+  @IsString()
+  @IsOptional()
+  inputFieldTwoLabel: string;
+
+  @ApiProperty()
   @IsEnum(['TEXT', 'SELECT', 'NUMBER'])
   @IsOptional()
   inputFieldTwoType: InputFieldType;
@@ -227,6 +262,11 @@ export class updateServicesDto {
   @IsBoolean()
   @IsOptional()
   isInputFieldThree: boolean;
+
+  @ApiProperty()
+  @IsString()
+  @IsOptional()
+  inputFieldThreeLabel: string;
 
   @ApiProperty()
   @IsEnum(['TEXT', 'SELECT', 'NUMBER'])

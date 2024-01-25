@@ -21,7 +21,7 @@ export class ServicesService {
 
   async findById(id: string) {
     try {
-      return await this.prismaService.services.findUnique({
+      const find = await this.prismaService.services.findUniqueOrThrow({
         where: {
           id,
         },
@@ -33,6 +33,12 @@ export class ServicesService {
           },
         },
       });
+
+      return {
+        statusCode: 200,
+        message: 'Service get successfully',
+        data: find,
+      };
     } catch (e) {
       console.log(e);
       throw new InternalServerErrorException('Error getting services');
@@ -41,39 +47,62 @@ export class ServicesService {
 
   async create(data: Prisma.ServicesCreateInput) {
     try {
-      return await this.prismaService.services.create({
+      const create = await this.prismaService.services.create({
         data,
       });
+      if (!create) {
+        throw new InternalServerErrorException('Error creating services');
+      }
+
+      return {
+        statusCode: 200,
+        message: 'Service created successfully',
+      };
     } catch (e) {
-      console.log(e);
-      return null;
+      throw new InternalServerErrorException('Error creating services');
     }
   }
 
   async update(id: string, data: Prisma.ServicesUpdateInput) {
     try {
-      return await this.prismaService.services.update({
+      const ex = await this.prismaService.services.update({
         where: {
           id,
         },
         data,
       });
+
+      if (!ex) {
+        throw new InternalServerErrorException('Error updating services');
+      }
+
+      return {
+        statusCode: 200,
+        message: 'Service updated successfully',
+      };
     } catch (e) {
-      console.log(e);
-      return null;
+      throw new InternalServerErrorException('Error updating services');
     }
   }
 
   async delete(id: string) {
     try {
-      return await this.prismaService.services.delete({
+      const ex = await this.prismaService.services.delete({
         where: {
           id,
         },
       });
+
+      if (!ex) {
+        throw new InternalServerErrorException('Error deleting services');
+      }
+
+      return {
+        statusCode: 200,
+        message: 'Service deleted successfully',
+      };
     } catch (e) {
-      console.log(e);
-      return null;
+      throw new InternalServerErrorException('Error deleting services');
     }
   }
 

@@ -55,6 +55,7 @@ model Services {
   imgLogo   String?     @map("img_logo")
   imgBanner String?     @map("img_banner")
   type      ServiceType @default(LAINNYA) @map("service_type")
+  publisher String?     @map("publisher")
 
   isAvailable Boolean @default(true) @map("is_available")
 
@@ -62,14 +63,17 @@ model Services {
   inputFieldHintImage   String? @map("input_field_hint_image")
 
   isInputFieldOne     Boolean        @default(false) @map("is_input_field_one")
+  inputFieldOneLabel  String?        @map("input_field_one_label")
   inputFieldOneType   InputFieldType @default(TEXT) @map("input_field_one_type")
   inputFieldOneOption Json?          @map("input_field_one_option")
 
   isInputFieldTwo     Boolean        @default(false) @map("is_input_field_two")
+  inputFieldTwoLabel  String?        @map("input_field_two_label")
   inputFieldTwoType   InputFieldType @default(TEXT) @map("input_field_two_type")
   inputFieldTwoOption Json?          @map("input_field_two_option")
 
   isInputFieldThree     Boolean        @default(false) @map("is_input_field_three")
+  inputFieldThreeLabel  String?        @map("input_field_three_label")
   inputFieldThreeType   InputFieldType @default(TEXT) @map("input_field_three_type")
   inputFieldThreeOption Json?          @map("input_field_three_option")
 

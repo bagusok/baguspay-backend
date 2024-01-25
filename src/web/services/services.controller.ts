@@ -41,74 +41,34 @@ export class ServicesController {
   @ApiParam({ name: 'id', type: String })
   @Get(':id')
   @Roles(['ADMIN'])
-  async getServicesById(@Req() req: Request, @Res() res: Response) {
+  async getServicesById(@Req() req: Request) {
     const { id } = req.params;
 
-    const service = await this.servicesService.findById(id);
-
-    if (!service) {
-      throw new BadRequestException('Error getting service');
-    }
-
-    return res.status(200).json({
-      message: 'Service get successfully',
-      data: service,
-    });
+    return await this.servicesService.findById(id);
   }
 
   @Post('create')
   @Roles(['ADMIN'])
   async createService(
     @Req() req: Request,
-    @Res() res: Response,
+
     @Body() body: createServicesDto,
   ) {
-    const service = await this.servicesService.create(body);
-
-    if (!service) {
-      throw new BadRequestException('Error creating service');
-    }
-
-    return res.status(200).json({
-      message: 'Service created successfully',
-      data: service,
-    });
+    return await this.servicesService.create(body);
   }
 
   @Post('update')
   @Roles(['ADMIN'])
-  async updateService(
-    @Req() req: Request,
-    @Res() res: Response,
-    @Body() body: updateServicesDto,
-  ) {
-    const service = await this.servicesService.update(body.id, body);
-
-    if (!service) {
-      throw new BadRequestException('Error updating service');
-    }
-
-    return res.status(200).json({
-      message: 'Service updated successfully',
-      data: service,
-    });
+  async updateService(@Req() req: Request, @Body() body: updateServicesDto) {
+    return await this.servicesService.update(body.id, body);
   }
 
   @ApiParam({ name: 'id', type: String })
   @Get('delete/:id')
   @Roles(['ADMIN'])
-  async deleteService(@Req() req: Request, @Res() res: Response) {
+  async deleteService(@Req() req: Request) {
     const { id } = req.params;
 
-    const service = await this.servicesService.delete(id);
-
-    if (!service) {
-      throw new BadRequestException('Error deleting service');
-    }
-
-    return res.status(200).json({
-      message: 'Service deleted successfully',
-      data: service,
-    });
+    return await this.servicesService.delete(id);
   }
 }
