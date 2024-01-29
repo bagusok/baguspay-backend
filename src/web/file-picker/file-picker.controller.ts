@@ -1,8 +1,8 @@
 import {
   BadRequestException,
+  Body,
   Controller,
   Get,
-  Param,
   Post,
   Res,
   UploadedFile,
@@ -11,13 +11,7 @@ import {
 } from '@nestjs/common';
 import { FilePickerService } from './file-picker.service';
 import { FileInterceptor } from '@nestjs/platform-express';
-import {
-  ApiBody,
-  ApiConsumes,
-  ApiParam,
-  ApiSecurity,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiBody, ApiConsumes, ApiSecurity, ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
 import { Roles } from 'src/common/roles.decorator';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
@@ -79,14 +73,22 @@ export class FilePickerController {
     });
   }
 
-  @ApiParam({
-    name: 'key',
-    description: 'File key',
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        id: {
+          type: 'string',
+        },
+      },
+    },
   })
-  @Get('delete/:key')
+  @Post('delete')
   @Roles(['ADMIN'])
-  async deleteFile(@Param('key') key: string, @Res() res: Response) {
-    const deleteFile = await this.filePickerService.deleteFile(key);
+  async deleteFile(@Body() body: { id: string }, @Res() res: Response) {
+    console.log(body);
+    if (!body.id) throw new BadRequestException('Id is required');
+    const deleteFile = await this.filePickerService.deleteFile(body);
 
     if (!deleteFile) {
       throw new BadRequestException("Can't delete file");

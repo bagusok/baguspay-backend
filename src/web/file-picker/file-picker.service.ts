@@ -48,10 +48,10 @@ export class FilePickerService {
     }
   }
 
-  async deleteFile(key: string) {
+  async deleteFile(body) {
     const command = new DeleteObjectCommand({
       Bucket: process.env.S3_BUCKET_NAME,
-      Key: key,
+      Key: body.id,
     });
     try {
       const result = await this.s3Client.send(command);
