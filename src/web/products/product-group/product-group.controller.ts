@@ -37,6 +37,7 @@ export class ProductGroupController {
     }
 
     return res.status(200).json({
+      statusCode: 200,
       message: 'Product Group get successfully',
       data: productGroup,
     });
@@ -57,6 +58,7 @@ export class ProductGroupController {
     }
 
     return res.status(200).json({
+      statusCode: 200,
       message: 'Product Group get successfully',
       data: productGroup,
     });
@@ -76,6 +78,7 @@ export class ProductGroupController {
     }
 
     return res.status(200).json({
+      statusCode: 200,
       message: 'Product Group created successfully',
       data: create,
     });
@@ -95,6 +98,7 @@ export class ProductGroupController {
     }
 
     return res.status(200).json({
+      statusCode: 200,
       message: 'Product Group updated successfully',
       data: update,
     });

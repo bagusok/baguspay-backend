@@ -38,6 +38,7 @@ export class ProductsController {
     }
 
     return res.status(200).json({
+      statusCode: 200,
       message: 'Products get successfully',
       data: products,
     });
@@ -56,8 +57,8 @@ export class ProductsController {
       throw new BadRequestException('Error creating product');
     }
     return res.status(201).json({
+      statusCode: 200,
       message: 'Product created successfully',
-      data: create,
     });
   }
 
@@ -75,8 +76,8 @@ export class ProductsController {
     }
 
     return res.status(200).json({
+      statusCode: 200,
       message: 'Product updated successfully',
-      data: update,
     });
   }
 
@@ -99,8 +100,8 @@ export class ProductsController {
     }
 
     return res.status(200).json({
+      statusCode: 200,
       message: 'Product deleted successfully',
-      data: deleteProduct,
     });
   }
 
@@ -120,6 +121,7 @@ export class ProductsController {
     }
 
     return res.status(200).json({
+      statusCode: 200,
       message: 'Product get successfully',
       data: product,
     });

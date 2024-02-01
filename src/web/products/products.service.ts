@@ -55,10 +55,31 @@ export class ProductsService {
   }
 
   async update(id: string, _data: UpdateProductDto) {
+    const isPriceThere =
+      _data.priceFromProvider && (_data.profit || _data.profitInPercent)
+        ? true
+        : false;
+    const isResellerPriceThere =
+      _data.priceFromProvider &&
+      _data.profitReseller &&
+      _data.profitResellerInPercent
+        ? true
+        : false;
+
+    console.log(
+      'isPriceThere',
+      isPriceThere,
+      _data.priceFromProvider,
+      _data.profit,
+      _data.profitInPercent,
+    );
+
     const price: number =
       _data.priceFromProvider +
       _data.profit +
       _data.priceFromProvider * (_data.profitInPercent / 100);
+
+    console.log('price', price);
 
     const resellerPrice: number =
       _data.priceFromProvider +
@@ -67,8 +88,8 @@ export class ProductsService {
 
     const data: Prisma.ProductsCreateInput = {
       ..._data,
-      price,
-      resellerPrice,
+      ...(isPriceThere && { price }),
+      ...(isResellerPriceThere && { resellerPrice }),
     };
 
     try {

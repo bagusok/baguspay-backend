@@ -133,24 +133,29 @@ export class UpdateProductDto {
   stock: number;
 
   @ApiProperty()
+  @IsOptional()
   @IsNumber()
   priceFromProvider: number;
 
   @ApiProperty()
+  @IsOptional()
   @IsNumber()
-  profit: number = 0;
+  profit: number;
 
   @ApiProperty()
+  @IsOptional()
   @IsNumber()
-  profitInPercent: number = 0;
+  profitInPercent: number;
 
   @ApiProperty()
+  @IsOptional()
   @IsNumber()
-  profitReseller: number = 0;
+  profitReseller: number;
 
   @ApiProperty()
+  @IsOptional()
   @IsNumber()
-  profitResellerInPercent: number = 0;
+  profitResellerInPercent: number;
 
   @IsEnum([
     'GAME_DIRECT',

@@ -28,7 +28,11 @@ export class ServicesService {
         include: {
           productGroup: {
             include: {
-              products: true,
+              products: {
+                orderBy: {
+                  createdAt: 'desc',
+                },
+              },
             },
           },
         },
