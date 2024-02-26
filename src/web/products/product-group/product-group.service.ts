@@ -8,7 +8,20 @@ export class ProductGroupService {
 
   async findAll() {
     try {
-      return await this.prismaService.productGroup.findMany();
+      return await this.prismaService.productGroup.findMany({
+        orderBy: {
+          Services: {
+            name: 'asc',
+          },
+        },
+        include: {
+          Services: {
+            select: {
+              name: true,
+            },
+          },
+        },
+      });
     } catch (e) {
       console.log(e);
       return null;

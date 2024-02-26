@@ -33,6 +33,7 @@ export class ServicesController {
     }
 
     return res.status(200).json({
+      statusCode: 200,
       message: 'Services get successfully',
       data: services,
     });
