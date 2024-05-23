@@ -1,7 +1,7 @@
 const { createHash } = require('crypto');
 
 const testPaydisiniCallback = async (refId) => {
-  const apikey = '1282579c91397d5a71bd0be5690ea279';
+  const apikey = process.env.PAYDISINI_APIKEY;
 
   const signature = createHash('md5')
     .update(`${apikey}${refId}CallbackStatus`)
