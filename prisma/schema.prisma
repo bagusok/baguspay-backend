@@ -19,8 +19,7 @@ model User {
   phone    String @unique
   longName String @map("long_name")
 
-  tokens String? @unique
-  role   Role    @default(USER)
+  role Role @default(USER)
 
   isBanned     Boolean @default(false) @map("is_banned")
   isVerifEmail Boolean @default(false) @map("is_verif_email")
@@ -32,11 +31,32 @@ model User {
   balance Int @default(0)
   point   Int @default(0)
 
-  verifiedAt   DateTime?
-  createdAt    DateTime       @default(now())
-  Transactions Transactions[]
+  verifiedAt      DateTime?
+  createdAt       DateTime          @default(now())
+  Transactions    Transactions[]
+  BalanceMutation BalanceMutation[]
+  Deposit         Deposit[]
+  loginHistory    LoginHistory[]
 
   @@map("users")
+}
+
+model LoginHistory {
+  id        String @id @unique @default(uuid())
+  deviceId  String @unique @map("device_id")
+  userAgent String @map("user_agent")
+  ip        String @map("ip")
+
+  token     String  @unique
+  userId    String  @map("user_id")
+  user      User    @relation(fields: [userId], references: [id])
+  isDeleted Boolean @default(false) @map("is_deleted")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+  expiredAt DateTime @map("expired_at")
+
+  @@map("login_history")
 }
 
 enum Role {
@@ -131,6 +151,7 @@ enum InputFieldType {
 
 model ProductGroup {
   id      String  @id @unique @default(uuid())
+  subName String? @unique @map("sub_name")
   name    String
   desc    String?
   imgLogo String? @map("img_logo")
@@ -149,6 +170,7 @@ model ProductGroup {
 
 model Products {
   id                      String              @id @unique @default(uuid())
+  sku_code                String              @unique @default(cuid()) @map("sku_code")
   name                    String
   desc                    String?
   imgLogo                 String?             @map("img_logo")
@@ -205,13 +227,15 @@ enum ProviderH2H {
 }
 
 model PaymentMethod {
-  id         String                @id @unique @default(cuid())
-  providerId String                @map("provider_id")
-  provider   PaymentMethodProvider @map("provider")
-  type       PaymentMethodType     @map("type")
+  id            String                @id @unique @default(cuid())
+  providerId    String                @map("provider_id")
+  provider      PaymentMethodProvider @map("provider")
+  type          PaymentMethodType     @map("type")
+  isLinkPayment Boolean               @default(false) @map("is_link_payment")
 
-  name String  @unique
-  desc String?
+  name  String  @unique
+  desc  String?
+  image String? @map("image")
 
   fees          Int    @default(0)
   feesInPercent String @default("0") @map("fees_in_percent")
@@ -227,12 +251,22 @@ model PaymentMethod {
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
   Transactions Transactions[]
+  Deposit      Deposit[]
+
+  paymentAllowAccess PaymentAllowAccess[] @default([DEPOSIT, TRANSACTION]) @map("payment_allow_access")
 
   @@map("payment_method")
 }
 
+enum PaymentAllowAccess {
+  DEPOSIT
+  TRANSACTION
+}
+
 enum PaymentMethodType {
+  SALDO
   TRANSFER_BANK
+  TRANSFER_PULSA
   TRANSFER_EWALLET
   DIRECT_EWALLET
   VIRTUAL_ACCOUNT
@@ -246,8 +280,11 @@ enum PaymentMethodType {
 }
 
 enum PaymentMethodProvider {
+  SALDO
   PAYDISINI
   DUITKU
+  TOKOPAY
+  FLIP
 }
 
 model Transactions {
@@ -268,7 +305,6 @@ model Transactions {
   idPaymentProvider String? @map("id_payment_provider")
   paymentNumber     String? @map("payment_number")
   paymentName       String? @map("payment_name")
-  isLinkPayment     Boolean @default(false) @map("is_link_payment")
   linkPayment       String? @map("link_payment")
 
   isQrcode Boolean @default(false) @map("is_qrcode")
@@ -294,9 +330,16 @@ model Transactions {
   sourceAgent String?    @map("source_agent")
   sourceType  sourceType @default(WEB) @map("source_type")
 
+  snRef      String? @map("sn_ref")
+  notes      String? @map("notes")
+  inputData  String? @map("input_data")
+  outputData String? @map("output_data")
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
   expiredAt DateTime @map("expired_at")
+
+  @@map("transactions")
 }
 
 enum sourceType {
@@ -349,4 +392,85 @@ model BannerSlider {
   updatedAt DateTime @updatedAt
 
   @@map("banner_slider")
+}
+
+model BalanceMutation {
+  id         String       @id @unique @default(cuid()) @map("id")
+  name       String       @map("name")
+  type       MutationType @map("type")
+  amount     Int          @map("amount")
+  oldBalance Int          @map("old_balance")
+  newBalance Int          @map("new_balance")
+
+  refType BalanceRefType @map("ref_type")
+  refId   String?        @map("ref_id")
+
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id])
+  notes     String?  @map("notes")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("balance_mutation")
+}
+
+enum MutationType {
+  IN
+  OUT
+}
+
+enum BalanceRefType {
+  DEPOSIT
+  WITHDRAW
+  TRANSACTION
+  REFUND
+  TRANSFER
+
+  @@map("balance_ref_type")
+}
+
+model Deposit {
+  id String @id @unique @default(uuid())
+
+  paymentRef        String? @map("payment_ref")
+  idPaymentProvider String? @map("id_payment_provider")
+  paymentNumber     String? @map("payment_number")
+  paymentName       String? @map("payment_name")
+  isLinkPayment     Boolean @default(false) @map("is_link_payment")
+  linkPayment       String? @map("link_payment")
+
+  isQrcode Boolean @default(false) @map("is_qrcode")
+  qrData   String? @map("qr_data")
+
+  depositStatus DepositStatus @default(PENDING) @map("deposit_status")
+
+  user   User   @relation(fields: [userId], references: [id])
+  userId String @map("user_id")
+
+  paymentMethod     PaymentMethod?    @relation(fields: [paymentMethodId], references: [id])
+  paymentMethodId   String?           @map("payment_method_id")
+  paymentMethodType PaymentMethodType @map("payment_method_type")
+
+  sourceIp    String?    @map("source")
+  sourceAgent String?    @map("source_agent")
+  sourceType  sourceType @default(WEB) @map("source_type")
+
+  notes String? @map("notes")
+
+  amount Int @map("amount")
+  fees   Int @default(0)
+  total  Int @default(0)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  expiredAt DateTime @map("expired_at")
+}
+
+enum DepositStatus {
+  PENDING
+  PROCESS
+  SUCCESS
+  CANCELLED
+  EXPIRED
+
+  @@map("deposit_status")
 }
