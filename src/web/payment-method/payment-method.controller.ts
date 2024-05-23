@@ -4,7 +4,9 @@ import {
   Controller,
   Get,
   HttpStatus,
+  Param,
   Post,
+  Query,
   Req,
   Res,
   UseGuards,
@@ -20,28 +22,42 @@ import {
   DeletePaymentMethodDto,
   UpdatePaymentMethodDto,
 } from './dtos/payment-method.dto';
+import { Role } from '@prisma/client';
 
 @ApiTags('Payment Method')
 @ApiSecurity('access-token')
-@Controller('payment-method')
+@Controller('admin/payment-method')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class PaymentMethodController {
   constructor(private readonly paymentMethodService: PaymentMethodService) {}
 
   @Get()
-  @Roles(['ADMIN', 'USER', 'RESELLER'])
-  async getAllPaymentMethods(@Res() res: Response) {
+  @Roles([Role.ADMIN])
+  async getAllPaymentMethods(
+    @Query()
+    query: {
+      limit: number;
+      page: number;
+      sortBy: string;
+    },
+  ) {
     const paymentMethods =
-      await this.paymentMethodService.getAllPaymentMethods();
-    return res.status(HttpStatus.OK).json({
-      statusCode: 200,
-      message: 'Get all payment methods successfully',
-      data: paymentMethods,
-    });
+      await this.paymentMethodService.getAllPaymentMethods(query);
+
+    return paymentMethods;
+  }
+
+  @Get('detail/:id')
+  @Roles([Role.ADMIN])
+  async getPaymentMethodDetail(@Param('id') id: string) {
+    const paymentMethod =
+      await this.paymentMethodService.getPaymentMethodById(id);
+
+    return paymentMethod;
   }
 
   @Post('create')
-  @Roles(['ADMIN'])
+  @Roles([Role.ADMIN])
   async createPaymentMethod(
     @Req() req: Request,
     @Res() res: Response,
@@ -54,14 +70,14 @@ export class PaymentMethodController {
       return new BadRequestException('Failed to create payment method');
     }
 
-    return res.status(HttpStatus.CREATED).json({
-      statusCode: 201,
+    return res.status(HttpStatus.OK).json({
+      statusCode: 200,
       message: 'Create payment method successfully',
     });
   }
 
   @Post('update')
-  @Roles(['ADMIN'])
+  @Roles([Role.ADMIN])
   async updatePaymentMethod(
     @Req() req: Request,
     @Res() res: Response,
@@ -83,7 +99,7 @@ export class PaymentMethodController {
   }
 
   @Post('delete')
-  @Roles(['ADMIN'])
+  @Roles([Role.ADMIN])
   async deletePaymentMethod(
     @Req() req: Request,
     @Res() res: Response,

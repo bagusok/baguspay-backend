@@ -27,13 +27,8 @@ export class UiController {
     if (!slug) {
       throw new NotFoundException('Slug not found');
     }
-    const get = await this.serviceService.findServicesBySlug(slug);
 
-    return {
-      statusCode: 200,
-      message: 'Success',
-      data: get,
-    };
+    return await this.serviceService.findServicesBySlug(slug);
   }
 
   @Get('services')

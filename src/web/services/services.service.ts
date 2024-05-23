@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from 'src/modules/prisma/prisma.service';
 
 @Injectable()
 export class ServicesService {
@@ -111,8 +111,9 @@ export class ServicesService {
   }
 
   async findServicesBySlug(slug: string) {
+    console.log('ss', await slug);
     try {
-      return await this.prismaService.services.findUniqueOrThrow({
+      const getSvc = await this.prismaService.services.findUnique({
         where: {
           slug,
         },
@@ -140,6 +141,12 @@ export class ServicesService {
           },
         },
       });
+
+      return {
+        statusCode: 200,
+        message: 'Success get service',
+        data: getSvc,
+      };
     } catch (e) {
       console.log(e);
       throw new NotFoundException('Service not found');

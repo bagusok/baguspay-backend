@@ -15,16 +15,17 @@ import { Roles } from 'src/common/roles.decorator';
 import { ServicesService } from './services.service';
 import { Request, Response } from 'express';
 import { createServicesDto, updateServicesDto } from './dtos/services.dto';
+import { Role } from '@prisma/client';
 
 @ApiTags('Services')
 @ApiSecurity('access-token')
-@Controller('services')
+@Controller('admin/services')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class ServicesController {
   constructor(private readonly servicesService: ServicesService) {}
 
   @Get()
-  @Roles(['ADMIN'])
+  @Roles([Role.ADMIN])
   async getServices(@Req() req: Request, @Res() res: Response) {
     const services = await this.servicesService.findAll();
 
@@ -41,7 +42,7 @@ export class ServicesController {
 
   @ApiParam({ name: 'id', type: String })
   @Get(':id')
-  @Roles(['ADMIN'])
+  @Roles([Role.ADMIN])
   async getServicesById(@Req() req: Request) {
     const { id } = req.params;
 
@@ -49,7 +50,7 @@ export class ServicesController {
   }
 
   @Post('create')
-  @Roles(['ADMIN'])
+  @Roles([Role.ADMIN])
   async createService(
     @Req() req: Request,
 
@@ -59,14 +60,14 @@ export class ServicesController {
   }
 
   @Post('update')
-  @Roles(['ADMIN'])
+  @Roles([Role.ADMIN])
   async updateService(@Req() req: Request, @Body() body: updateServicesDto) {
     return await this.servicesService.update(body.id, body);
   }
 
   @ApiParam({ name: 'id', type: String })
   @Get('delete/:id')
-  @Roles(['ADMIN'])
+  @Roles([Role.ADMIN])
   async deleteService(@Req() req: Request) {
     const { id } = req.params;
 

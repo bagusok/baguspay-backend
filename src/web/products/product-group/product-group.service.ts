@@ -1,18 +1,23 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from 'src/modules/prisma/prisma.service';
 
 @Injectable()
 export class ProductGroupService {
   constructor(private readonly prismaService: PrismaService) {}
 
-  async findAll() {
+  async findAll({ limit = 10, page = 1, sortBy = 'createdAt.desc' }) {
     try {
-      return await this.prismaService.productGroup.findMany({
+      const countPage = await this.prismaService.productGroup.count({});
+      const orderBy = {
+        [sortBy.split('.')[0]]: sortBy.split('.')[1],
+      };
+
+      const getProductGroup = await this.prismaService.productGroup.findMany({
+        take: Number(limit),
+        skip: (page - 1) * limit,
         orderBy: {
-          Services: {
-            name: 'asc',
-          },
+          ...orderBy,
         },
         include: {
           Services: {
@@ -22,9 +27,20 @@ export class ProductGroupService {
           },
         },
       });
+
+      return {
+        statusCode: 200,
+        pagination: {
+          page: Number(page),
+          limit: Number(limit),
+          totalPage: Math.ceil(countPage / limit),
+          totalData: countPage,
+        },
+        data: getProductGroup,
+      };
     } catch (e) {
       console.log(e);
-      return null;
+      return new InternalServerErrorException('Error getting product group');
     }
   }
 

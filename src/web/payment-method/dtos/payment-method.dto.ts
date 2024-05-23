@@ -1,17 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
-
-type PaymentMethodProvider = 'PAYDISINI' | 'DUITKU';
-type PaymentMethodType =
-  | 'TRANSFER_BANK'
-  | 'TRANSFER_EWALLET'
-  | 'DIRECT_EWALLET'
-  | 'VIRTUAL_ACCOUNT'
-  | 'RETAIL_OUTLET'
-  | 'CREDIT_CARD'
-  | 'LINK_PAYMENT'
-  | 'QR_CODE'
-  | 'OTHER';
+import { PaymentMethodProvider, PaymentMethodType } from '@prisma/client';
+import {
+  IsBoolean,
+  IsEnum,
+  IsNumber,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 
 export class CreatePaymentMethodDto {
   @ApiProperty()
@@ -19,7 +14,7 @@ export class CreatePaymentMethodDto {
   providerId: string;
 
   @ApiProperty()
-  @IsEnum(['PAYDISINI', 'DUITKU'])
+  @IsEnum(PaymentMethodProvider)
   provider: PaymentMethodProvider;
 
   @ApiProperty()
@@ -46,6 +41,11 @@ export class CreatePaymentMethodDto {
   desc: string;
 
   @ApiProperty()
+  @IsString()
+  @IsOptional()
+  image: string;
+
+  @ApiProperty()
   @IsNumber()
   fees: number;
 
@@ -60,6 +60,25 @@ export class CreatePaymentMethodDto {
   @ApiProperty()
   @IsNumber()
   maxAmount: number;
+
+  @ApiProperty()
+  @IsBoolean()
+  isAvailable: boolean;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsNumber()
+  expiredInMinutes: number;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsString()
+  cutOffStart: string;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsString()
+  cutOffEnd: string;
 }
 
 export class UpdatePaymentMethodDto {
@@ -72,7 +91,7 @@ export class UpdatePaymentMethodDto {
   providerId: string;
 
   @ApiProperty()
-  @IsEnum(['PAYDISINI', 'DUITKU'])
+  @IsEnum(PaymentMethodProvider)
   @IsOptional()
   provider: PaymentMethodProvider;
 
@@ -87,6 +106,7 @@ export class UpdatePaymentMethodDto {
     'CREDIT_CARD',
     'LINK_PAYMENT',
     'OTHER',
+    'QR_CODE',
   ])
   type: PaymentMethodType;
 
@@ -101,6 +121,11 @@ export class UpdatePaymentMethodDto {
   desc: string;
 
   @ApiProperty()
+  @IsString()
+  @IsOptional()
+  image: string;
+
+  @ApiProperty()
   @IsNumber()
   @IsOptional()
   fees: number;
@@ -111,12 +136,34 @@ export class UpdatePaymentMethodDto {
   feesInPercent: string;
 
   @ApiProperty()
+  @IsOptional()
   @IsNumber()
   minAmount: number;
 
   @ApiProperty()
+  @IsOptional()
   @IsNumber()
   maxAmount: number;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsBoolean()
+  isAvailable: boolean;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsNumber()
+  expiredInMinutes: number;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsString()
+  cutOffStart: string;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsString()
+  cutOffEnd: string;
 }
 
 export class DeletePaymentMethodDto {

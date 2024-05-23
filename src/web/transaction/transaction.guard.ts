@@ -31,6 +31,7 @@ export class TransactionGuard implements CanActivate {
       }
 
       const validate = await this.authService.validateUser(
+        jwt,
         payload.userId,
         payload.username,
         payload.role,

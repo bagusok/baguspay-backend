@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from 'src/modules/prisma/prisma.service';
 import { ServiceGroupService } from 'src/web/services/service-group/service-group.service';
 import { getPaymentMethodDto } from './dtos/ui.dto';
 
@@ -21,16 +21,19 @@ export class UiService {
       throw new NotFoundException('Product not found');
     }
 
-    const totalPrice = checkProduct.price * data.qty;
+    const totalProductPrice = checkProduct.price * data.qty;
 
     const checkPayment = await this.prismaService.paymentMethod.findMany({
       where: {
         minAmount: {
-          lte: totalPrice,
+          lte: totalProductPrice,
         },
         maxAmount: {
-          gte: totalPrice,
+          gte: totalProductPrice,
         },
+      },
+      orderBy: {
+        type: 'asc',
       },
     });
 
@@ -38,45 +41,68 @@ export class UiService {
       throw new NotFoundException('Payment method not found');
     }
 
-    const groupDataByType = (paymentMethods: any) => {
-      return paymentMethods.reduce((acc, paymentMethod) => {
-        const type = paymentMethod.type;
+    const _datas = [];
+    let selected: any = {
+      total: 100000000000000000,
+    };
+    const payType = [];
 
-        acc[type] = acc[type] || [];
+    checkPayment.forEach((paymentMethod) => {
+      let findPayTypeIndex = payType.findIndex((x) => x == paymentMethod.type);
 
-        console.log(paymentMethod.feesInPercent, 'percent');
-        const percentToDesimal = Number(paymentMethod.feesInPercent) / 100;
-        const fees = Math.round(
-          percentToDesimal * totalPrice + paymentMethod.fees,
-        );
+      if (findPayTypeIndex === -1) {
+        payType.push(paymentMethod.type);
+        _datas.push({ type: paymentMethod.type, data: [] });
 
-        const price = checkProduct.price * data.qty;
-        const _totalPrice = price + fees;
+        findPayTypeIndex = _datas.length - 1;
+      }
 
-        if (
-          _totalPrice >= paymentMethod.minAmount &&
-          _totalPrice <= paymentMethod.maxAmount
-        ) {
-          acc[type].push({
+      const totalPrice =
+        Math.ceil(
+          (totalProductPrice / (100 - Number(paymentMethod.feesInPercent))) *
+            100,
+        ) + paymentMethod.fees;
+
+      const fees = totalPrice - totalProductPrice;
+
+      if (
+        totalPrice >= paymentMethod.minAmount &&
+        totalPrice <= paymentMethod.maxAmount
+      ) {
+        if (selected.total > totalPrice) {
+          selected = {
             id: paymentMethod.id,
             name: paymentMethod.name,
+            type: paymentMethod.type,
+            desc: paymentMethod.desc,
+            image: paymentMethod.image,
             productPrice: checkProduct.price,
             qty: data.qty,
-            totalProductPrice: totalPrice,
+            totalProductPrice: totalProductPrice,
             fees: fees,
-            total: _totalPrice,
-          });
+            total: totalPrice,
+          };
         }
 
-        return acc;
-      }, {});
-    };
+        _datas[findPayTypeIndex].data.push({
+          id: paymentMethod.id,
+          name: paymentMethod.name,
+          desc: paymentMethod.desc,
+          image: paymentMethod.image,
+          productPrice: checkProduct.price,
+          qty: data.qty,
+          totalProductPrice: totalProductPrice,
+          fees: fees,
+          total: totalPrice,
+        });
+      }
+    });
 
-    const groupData = groupDataByType(checkPayment);
     return {
       statusCode: 200,
+      selected,
       message: 'Success',
-      data: groupData,
+      data: _datas,
     };
   }
 }

@@ -62,6 +62,15 @@ export class createTransactionDto {
   @IsString()
   productId: string;
 
+  @ApiProperty()
+  @IsString()
+  inputData: string;
+
+  @ApiProperty()
+  @IsString()
+  @IsOptional()
+  outputData: string;
+
   @IsDateString()
   @IsOptional()
   expiredAt: Date;
@@ -97,31 +106,4 @@ export class cancelTransactionDto {
   @ApiProperty()
   @IsString()
   trxId: string;
-}
-
-export class getAllTransactionsDto {
-  @ApiProperty()
-  @IsString()
-  @IsOptional()
-  page?: number;
-
-  @ApiProperty()
-  @IsString()
-  @IsOptional()
-  limit?: number;
-
-  @ApiProperty()
-  @IsEnum(['PENDING', 'PAID', 'CANCELLED', 'EXPIRED'])
-  @IsOptional()
-  paidStatus?: EPaidStatus;
-
-  @ApiProperty()
-  @IsEnum(['PENDING', 'PROCESS', 'SUCCESS', 'FAILED', 'CANCELLED'])
-  @IsOptional()
-  orderStatus?: EOrderStatus;
-
-  @ApiProperty()
-  @IsString()
-  @IsOptional()
-  trxId?: string;
 }

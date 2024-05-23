@@ -1,0 +1,36 @@
+import { InjectQueue } from '@nestjs/bull';
+import { Injectable } from '@nestjs/common';
+import { Queue } from 'bull';
+
+@Injectable()
+export class QueueService {
+  constructor(
+    @InjectQueue('transaction-process')
+    private readonly transactionProcessQueue: Queue,
+  ) {}
+
+  async addTransactionProcessJob(data: {
+    trxId: string;
+    userId?: string;
+    status: string;
+  }) {
+    await this.transactionProcessQueue.add('transaction', data);
+    // console.log(a);
+    return {
+      message: 'Success add transaction job',
+    };
+  }
+
+  async addDepositProcessJob(data: {
+    depositId: string;
+    userId?: string;
+    status: string;
+    amount: number;
+  }) {
+    await this.transactionProcessQueue.add('deposit', data);
+    // console.log(a);
+    return {
+      message: 'Success add deposit job',
+    };
+  }
+}

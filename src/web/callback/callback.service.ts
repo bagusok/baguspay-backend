@@ -2,15 +2,17 @@ import { Injectable } from '@nestjs/common';
 import {
   ICallbackPaymentParams,
   PaymentService,
-} from 'src/payment/payment.service';
-import { ICallbackPaydisiniParams } from 'src/payment/providers/paydisini/paydisini.service';
-import { PrismaService } from 'src/prisma/prisma.service';
+} from 'src/modules/payment/payment.service';
+import { ICallbackPaydisiniParams } from 'src/modules/payment/providers/paydisini/paydisini.service';
+import { PrismaService } from 'src/modules/prisma/prisma.service';
+import { QueueService } from 'src/queue/queue.service';
 
 @Injectable()
 export class CallbackService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly paymentService: PaymentService,
+    private readonly queueService: QueueService,
   ) {}
 
   async paydisiniCallback(_data: ICallbackPaydisiniParams) {
@@ -28,41 +30,88 @@ export class CallbackService {
         success: 'false',
       };
     }
+
+    console.log('get: ', data);
+
     try {
-      const paidStatus = _data.status == 'Success' ? 'PAID' : 'CANCELLED';
-
-      const updateTrx = await this.prismaService.transactions.update({
-        data: {
-          paidStatus: paidStatus,
-          paidAt: new Date(),
-        },
-        where: {
-          id: data.trxId,
-          paidStatus: 'PENDING',
-          expiredAt: {
-            gte: new Date(),
+      if (data.trxId.startsWith('depo')) {
+        const updateDeposit = await this.prismaService.deposit.update({
+          data: {
+            depositStatus: 'PROCESS',
           },
-        },
-      });
+          where: {
+            id: data.trxId,
+            depositStatus: 'PENDING',
+          },
+        });
 
-      if (!updateTrx) {
+        if (!updateDeposit) {
+          return {
+            success: 'false',
+            message: 'Deposit not found or Already Processed',
+          };
+        }
+
+        await this.queueService.addDepositProcessJob({
+          amount: updateDeposit.amount,
+          depositId: data.trxId,
+          userId: updateDeposit.userId,
+          status: updateDeposit.depositStatus,
+        });
+
         return {
-          success: 'false',
+          statusCode: 200,
+          depositId: data.trxId,
+          // status: updateTrx.paidStatus,
+          success: 'true',
+        };
+      } else {
+        const paidStatus = _data.status == 'Success' ? 'PAID' : 'CANCELLED';
+
+        const updateTrx = await this.prismaService.transactions.update({
+          data: {
+            paidStatus: paidStatus,
+            paidAt: new Date(),
+          },
+          where: {
+            id: data.trxId,
+            paidStatus: 'PENDING',
+            expiredAt: {
+              gte: new Date(),
+            },
+          },
+        });
+
+        if (!updateTrx) {
+          return {
+            success: 'false',
+            message: 'Transaction not found or Already Paid or Expired',
+          };
+        }
+
+        // Add QUEUE Transaction Process
+        await this.queueService.addTransactionProcessJob({
+          trxId: data.trxId,
+          status: updateTrx.paidStatus,
+        });
+
+        return {
+          statusCode: 200,
+          trxId: data.trxId,
+          status: updateTrx.paidStatus,
+          success: 'true',
         };
       }
-
-      return {
-        statusCode: 200,
-        trxId: data.trxId,
-        status: updateTrx.paidStatus,
-        success: 'true',
-      };
     } catch (error) {
       if (error?.code == 'P2025') {
         console.log('prisma update err: ', error?.meta?.cause);
       }
+
+      console.log('error: ', error);
+
       return {
         success: 'false',
+        message: 'Transaction not found or Already Paid or Expired',
       };
     }
   }

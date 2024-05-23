@@ -4,6 +4,7 @@ import {
   Controller,
   Get,
   Post,
+  Query,
   Req,
   Res,
   UseGuards,
@@ -19,6 +20,7 @@ import {
   deleteProductGroupDto,
   updateProductGroupDto,
 } from './dtos/product-group.dto';
+import { Role } from '@prisma/client';
 
 @ApiTags('Admin product-group')
 @ApiSecurity('access-token')
@@ -28,24 +30,29 @@ export class ProductGroupController {
   constructor(private readonly productGroupService: ProductGroupService) {}
 
   @Get()
-  @Roles(['ADMIN'])
-  async getProductGroup(@Req() req: Request, @Res() res: Response) {
-    const productGroup = await this.productGroupService.findAll();
+  @Roles([Role.ADMIN])
+  async getProductGroup(
+    @Req() req: Request,
+    @Query()
+    query: {
+      page: number;
+      limit: number;
+      sortBy: string;
+      search: string;
+    },
+  ) {
+    const productGroup = await this.productGroupService.findAll(query);
 
     if (!productGroup) {
       throw new BadRequestException('Error getting product group');
     }
 
-    return res.status(200).json({
-      statusCode: 200,
-      message: 'Product Group get successfully',
-      data: productGroup,
-    });
+    return productGroup;
   }
 
   @ApiParam({ name: 'id', type: String })
   @Get(':id')
-  @Roles(['ADMIN'])
+  @Roles([Role.ADMIN])
   async getProductGroupById(@Req() req: Request, @Res() res: Response) {
     if (!req.params.id) {
       throw new BadRequestException('Param id is required');
@@ -65,7 +72,7 @@ export class ProductGroupController {
   }
 
   @Post('create')
-  @Roles(['ADMIN'])
+  @Roles([Role.ADMIN])
   async createProductGroup(
     @Req() req: Request,
     @Res() res: Response,
@@ -85,7 +92,7 @@ export class ProductGroupController {
   }
 
   @Post('update')
-  @Roles(['ADMIN'])
+  @Roles([Role.ADMIN])
   async updateProductGroup(
     @Req() req: Request,
     @Res() res: Response,
@@ -105,7 +112,7 @@ export class ProductGroupController {
   }
 
   @Post('delete')
-  @Roles(['ADMIN'])
+  @Roles([Role.ADMIN])
   async deleteProductGroup(
     @Req() req: Request,
     @Res() res: Response,

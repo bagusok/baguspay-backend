@@ -10,35 +10,36 @@ import {
   DeleteServiceGroupDto,
   UpdateServiceGroupDto,
 } from './service-group.dto';
+import { Role } from '@prisma/client';
 
 @ApiTags('Service Group')
 @ApiSecurity('access-token')
-@Controller('service-group')
+@Controller('admin/service-group')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class ServiceGroupController {
   constructor(private readonly serviceGroup: ServiceGroupService) {}
 
   @Get()
-  @Roles(['ADMIN'])
+  @Roles([Role.ADMIN])
   async getServiceGroup() {
     return await this.serviceGroup.findAll();
   }
 
   @Post('create')
-  @Roles(['ADMIN'])
+  @Roles([Role.ADMIN])
   async createServiceGroup(@Body() body: CreateServiceGroupDto) {
     return await this.serviceGroup.create(body);
   }
 
   @Post('update')
-  @Roles(['ADMIN'])
+  @Roles([Role.ADMIN])
   async updateServiceGroup(@Body() body: UpdateServiceGroupDto) {
     const update = await this.serviceGroup.update(body);
     return update;
   }
 
   @Post('delete')
-  @Roles(['ADMIN'])
+  @Roles([Role.ADMIN])
   async deleteServiceGroup(@Body() body: DeleteServiceGroupDto) {
     const del = await this.serviceGroup.delete(body);
     return del;

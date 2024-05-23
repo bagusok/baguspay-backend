@@ -1,79 +1,113 @@
-import {
-  ForbiddenException,
-  Injectable,
-  InternalServerErrorException,
-} from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import * as crypto from 'crypto';
-import { PaymentService } from 'src/payment/payment.service';
-import { PrismaService } from 'src/prisma/prisma.service';
-import {
-  EOrderStatus,
-  EPaidStatus,
-  createTransactionDto,
-} from './dtos/transaction.dto';
+import { PaymentService } from 'src/modules/payment/payment.service';
+import { PrismaService } from 'src/modules/prisma/prisma.service';
+import { createTransactionDto } from './dtos/transaction.dto';
+import { QueueService } from 'src/queue/queue.service';
+import { CustomError } from 'src/common/custom.error';
+import { Role } from '@prisma/client';
 
 @Injectable()
 export class TransactionService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly paymentService: PaymentService,
+    private readonly queueService: QueueService,
   ) {}
 
   async getAllTransactions(
-    _userId?: string,
-    userRole?: 'ADMIN' | 'USER' | 'RESELLER' | null,
-    page: number = 1,
-    limit: number = 10,
-    paidStatus?: EPaidStatus,
-    orderStatus?: EOrderStatus,
-    trxId?: string,
+    userId = null,
+    role: Role | null = null,
+    {
+      page = 1,
+      limit = 10,
+      sortBy = 'createdAt.desc',
+      search = null,
+    }: {
+      page: number;
+      limit: number;
+      sortBy: string;
+      search: string;
+    },
   ) {
-    if (!userRole) throw new ForbiddenException('User role not found');
+    try {
+      const user = userId && role == 'USER' ? { userId } : {};
 
-    const userId = _userId && userRole !== 'ADMIN' && { userId: _userId };
+      const orderBy = {
+        [sortBy.split('.')[0]]: sortBy.split('.')[1],
+      };
 
-    const skip = (page - 1) * limit;
+      const _search = search
+        ? {
+            [search.split('.')[0]]: {
+              contains: search.split('.')[1],
+              mode: 'insensitive',
+            },
+          }
+        : {};
 
-    const where = {
-      paidStatus: paidStatus,
-      orderStatus: orderStatus,
-      id: trxId,
-      ...userId,
-    };
+      const getTrx = await this.prismaService.transactions.findMany({
+        where: {
+          ...user,
+          ..._search,
+        },
+        orderBy: {
+          ...orderBy,
+        },
+        skip: (page - 1) * limit,
+        take: limit,
+      });
 
-    const count = await this.prismaService.transactions.count({
-      where,
-    });
+      const getCount = await this.prismaService.transactions.count({
+        where: {
+          ...user,
+          ..._search,
+        },
+      });
 
-    const totalPage = Math.ceil(count / limit);
-
-    const transactions = await this.prismaService.transactions.findMany({
-      where,
-      take: Number(limit),
-      skip,
-      orderBy: {
-        createdAt: 'desc',
-      },
-      include: {
-        paymentMethod: true,
-      },
-    });
-
-    return {
-      status: 200,
-      message: 'Success',
-      data: {
-        count,
-        totalPage,
-        transactions,
-      },
-    };
+      return {
+        statusCode: 200,
+        message: 'Success',
+        pagination: {
+          page,
+          limit,
+          totalPage: getCount / limit,
+          totalData: getCount,
+        },
+        data: getTrx,
+      };
+    } catch (error) {
+      throw new HttpException(
+        error.publicMessage || 'Internal Server Error',
+        error.statusCode || 500,
+      );
+    }
   }
 
   async getTransactionById(id: string) {
-    return this.prismaService.transactions.findUnique({
-      where: { id },
-    });
+    try {
+      const getTrx = await this.prismaService.transactions.findUnique({
+        where: { id },
+        include: {
+          paymentMethod: true,
+        },
+      });
+
+      if (!getTrx) {
+        throw new CustomError(HttpStatus.NOT_FOUND, 'Transaction not found');
+      }
+
+      return {
+        statusCode: 200,
+        message: 'Success',
+        data: getTrx,
+      };
+    } catch (err) {
+      throw new HttpException(
+        err.publicMessage || 'Internal Server Error',
+        err.statusCode || 500,
+      );
+    }
   }
 
   async createTransaction(userId: string, data: createTransactionDto) {
@@ -91,6 +125,13 @@ export class TransactionService {
         });
 
       if (!checkPaymentMethod) {
+        return {
+          status: 503,
+          message: 'Payment method not available',
+        };
+      }
+
+      if (checkPaymentMethod.type == 'SALDO' && userId == null) {
         return {
           status: 503,
           message: 'Payment method not available',
@@ -131,26 +172,35 @@ export class TransactionService {
 
       const transaction = await this.prismaService.$transaction(
         async (tx) => {
-          const expiredAt = new Date().getTime() + 1000 * 60 * 60 * 2;
+          await tx.products.update({
+            where: {
+              id: checkProduct.id,
+            },
+            data: {
+              stock: checkProduct.stock - data.productQty,
+            },
+          });
+
+          const expiredAt =
+            new Date().getTime() +
+            1000 * 60 * checkPaymentMethod.expiredInMinutes;
 
           const trxId = await this.generateTransactionId();
 
           const price = checkProduct.price * data.productQty;
-          const percentToDesimal =
-            Number(checkPaymentMethod.feesInPercent) / 100;
-          const fees = Math.round(
-            percentToDesimal * price + checkPaymentMethod.fees,
-          );
+          const totalPrice =
+            Math.ceil(
+              (price / (100 - Number(checkPaymentMethod.feesInPercent))) * 100,
+            ) + checkPaymentMethod.fees;
 
-          console.log(price, fees);
-
-          const totalPrice = price + fees;
+          const fees = totalPrice - price;
+          console.log(price, fees, totalPrice);
 
           if (
             totalPrice <= checkPaymentMethod.minAmount ||
             totalPrice >= checkPaymentMethod.maxAmount
           )
-            throw new Error('Payment method not available');
+            throw new CustomError(404, 'Payment method not available');
 
           const createTransaction = await tx.transactions.create({
             data: {
@@ -170,29 +220,37 @@ export class TransactionService {
                 checkProduct?.productGroup?.Services?.name ?? 'Nothing',
               expiredAt: new Date(expiredAt),
               userId: userId,
+              inputData: data.inputData,
+              outputData: data.outputData,
             },
           });
 
           if (!createTransaction) {
-            throw new Error('Failed to create transaction');
+            throw new CustomError(422, 'Failed to create transaction');
           }
 
           const createPayment = await this.paymentService.createPayment({
-            amount: createTransaction.totalPrice,
+            userId: userId,
+            type: checkPaymentMethod.type,
+            amount: createTransaction.price,
+            amountTotal: createTransaction.totalPrice,
+            fees: fees,
+            feesInPercent: checkPaymentMethod.feesInPercent,
             description: createTransaction.productName,
             idPaymentMethodProvider: checkPaymentMethod.providerId,
             paymentMethodProvider: checkPaymentMethod.provider,
             trxId: createTransaction.id,
             phone: data?.phone,
+            validTime: checkPaymentMethod.expiredInMinutes * 60,
           });
 
           if (!createPayment) {
-            throw new Error('Failed to create payment');
+            throw new CustomError(422, 'Failed to create payment');
           }
 
           const profit =
             totalPrice -
-            createPayment.fee -
+            fees -
             checkProduct.priceFromProvider * data.productQty;
 
           const updateTransaction = await tx.transactions.update({
@@ -200,7 +258,8 @@ export class TransactionService {
               id: createTransaction.id,
             },
             data: {
-              expiredAt: new Date(createPayment.expired),
+              paidStatus: createPayment.status,
+              // expiredAt: new Date(createPayment.expired),
               fees: Number(createPayment.fee),
               profit: profit,
               price: price,
@@ -219,15 +278,23 @@ export class TransactionService {
               paymentMethodProvider: checkPaymentMethod.provider,
             });
 
-            throw new Error('Failed to update transaction');
+            throw new CustomError(422, 'Failed to update transaction');
           }
 
           return updateTransaction;
         },
-        { timeout: 10000 },
+        { timeout: 20000 },
       );
 
       clearInterval(setTime);
+
+      if (transaction.paidStatus == 'PAID') {
+        await this.queueService.addTransactionProcessJob({
+          trxId: transaction.id,
+          status: 'PAID',
+          userId: userId,
+        });
+      }
 
       return {
         statusCode: 200,
@@ -237,37 +304,12 @@ export class TransactionService {
       };
     } catch (error) {
       clearInterval(setTime);
-      throw new InternalServerErrorException(error.message);
-    }
-  }
-
-  private async generateTransactionId() {
-    function rand() {
-      const date = new Date().getTime().toString();
-      const random = crypto.randomBytes(8).toString('hex').toUpperCase();
-
-      return date + random;
-    }
-
-    let _rand = '';
-    do {
-      const gen = rand();
-      const checkTransaction = await this.prismaService.transactions.findUnique(
-        {
-          where: {
-            id: gen,
-          },
-        },
+      console.log(error);
+      throw new HttpException(
+        error.publicMessage || 'Internal Server Error',
+        error.statusCode || 500,
       );
-      console.log(checkTransaction);
-
-      if (!checkTransaction) {
-        _rand = gen;
-        break;
-      }
-    } while (true);
-
-    return _rand;
+    }
   }
 
   async cancelTransaction(
@@ -339,5 +381,34 @@ export class TransactionService {
       console.log(error);
       return null;
     }
+  }
+
+  private async generateTransactionId() {
+    function rand() {
+      const date = new Date().getTime().toString();
+      const random = crypto.randomBytes(8).toString('hex').toUpperCase();
+
+      return date + random;
+    }
+
+    let _rand = '';
+    do {
+      const gen = rand();
+      const checkTransaction = await this.prismaService.transactions.findUnique(
+        {
+          where: {
+            id: gen,
+          },
+        },
+      );
+      console.log(checkTransaction);
+
+      if (!checkTransaction) {
+        _rand = gen;
+        break;
+      }
+    } while (true);
+
+    return _rand;
   }
 }

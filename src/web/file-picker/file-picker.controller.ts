@@ -17,6 +17,7 @@ import { Roles } from 'src/common/roles.decorator';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { FileUploadValidationPipe } from 'src/common/file-upload.validation';
+import { Role } from '@prisma/client';
 
 @ApiTags('File Picker')
 @ApiSecurity('access-token')
@@ -26,7 +27,7 @@ export class FilePickerController {
   constructor(private readonly filePickerService: FilePickerService) {}
 
   @Get('list')
-  @Roles(['ADMIN'])
+  @Roles([Role.ADMIN])
   async listFiles(@Res() res: Response) {
     const getList = await this.filePickerService.getAllFiles();
 
@@ -54,7 +55,7 @@ export class FilePickerController {
     },
   })
   @Post('upload')
-  @Roles(['ADMIN'])
+  @Roles([Role.ADMIN])
   @UseInterceptors(FileInterceptor('file'))
   async uploadFile(
     @Res() res: Response,
@@ -84,7 +85,7 @@ export class FilePickerController {
     },
   })
   @Post('delete')
-  @Roles(['ADMIN'])
+  @Roles([Role.ADMIN])
   async deleteFile(@Body() body: { id: string }, @Res() res: Response) {
     console.log(body);
     if (!body.id) throw new BadRequestException('Id is required');

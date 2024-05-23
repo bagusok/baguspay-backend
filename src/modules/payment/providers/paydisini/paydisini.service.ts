@@ -7,7 +7,7 @@ import {
 import { Injectable } from '@nestjs/common';
 import * as crypto from 'crypto';
 import { ICreateTransactionResponse } from './paydisini.types';
-import { ICallbackPaymentParams } from 'src/payment/payment.service';
+import { ICallbackPaymentParams } from 'src/modules/payment/payment.service';
 
 @Injectable()
 export class PaydisiniService {

@@ -9,6 +9,7 @@ import { BannerService } from './banner.service';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { Roles } from 'src/common/roles.decorator';
+import { Role } from '@prisma/client';
 
 @ApiTags('Banner')
 @Controller()
@@ -18,7 +19,7 @@ export class BannerController {
   @ApiSecurity('access-token')
   @Post('admin/banner/create')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(['ADMIN'])
+  @Roles([Role.ADMIN])
   async createBanner(@Body() body: CreateBannerDto) {
     return await this.bannerService.createBanner(body);
   }
@@ -26,7 +27,7 @@ export class BannerController {
   @ApiSecurity('access-token')
   @Post('admin/banner/update')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(['ADMIN'])
+  @Roles([Role.ADMIN])
   async updateBanner(@Body() body: UpdateBannerDto) {
     return await this.bannerService.updateBanner(body);
   }
@@ -34,7 +35,7 @@ export class BannerController {
   @ApiSecurity('access-token')
   @Post('admin/banner/delete')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(['ADMIN'])
+  @Roles([Role.ADMIN])
   async deleteBanner(@Body() body: DeleteBannerDto) {
     return await this.bannerService.deleteBanner(body);
   }

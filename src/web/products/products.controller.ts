@@ -5,6 +5,7 @@ import {
   Get,
   NotFoundException,
   Post,
+  Query,
   Req,
   Res,
   UseGuards,
@@ -20,6 +21,7 @@ import { ApiParam, ApiSecurity, ApiTags } from '@nestjs/swagger';
 import { Roles } from 'src/common/roles.decorator';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
+import { Role } from '@prisma/client';
 
 @ApiTags('Admin Products')
 @ApiSecurity('access-token')
@@ -29,23 +31,32 @@ export class ProductsController {
   constructor(private readonly productService: ProductsService) {}
 
   @Get()
-  @Roles(['ADMIN'])
-  async getProducts(@Req() req: Request, @Res() res: Response) {
-    const products = await this.productService.findAll();
+  @Roles([Role.ADMIN])
+  async getProducts(
+    @Query()
+    query: {
+      page: number;
+      limit: number;
+      sortBy: string;
+      search: string;
+    },
+  ) {
+    const products = await this.productService.findAll({
+      page: query.page || 1,
+      limit: query.limit || 10,
+      sortBy: query.sortBy,
+      search: query.search || '',
+    });
 
     if (!products) {
       throw new BadRequestException('Error getting products');
     }
 
-    return res.status(200).json({
-      statusCode: 200,
-      message: 'Products get successfully',
-      data: products,
-    });
+    return products;
   }
 
   @Post('create')
-  @Roles(['ADMIN'])
+  @Roles([Role.ADMIN])
   async createProduct(
     @Req() req: Request,
     @Res() res: Response,
@@ -63,7 +74,7 @@ export class ProductsController {
   }
 
   @Post('update')
-  @Roles(['ADMIN'])
+  @Roles([Role.ADMIN])
   async updateProducts(
     @Req() req: Request,
     @Res() res: Response,
@@ -82,7 +93,7 @@ export class ProductsController {
   }
 
   @Post('delete')
-  @Roles(['ADMIN'])
+  @Roles([Role.ADMIN])
   async deleteProduct(
     @Req() req: Request,
     @Res() res: Response,
@@ -107,7 +118,7 @@ export class ProductsController {
 
   @ApiParam({ name: 'id', type: 'string' })
   @Get(':id')
-  @Roles(['ADMIN'])
+  @Roles([Role.ADMIN])
   async getProductById(@Req() req: Request, @Res() res: Response) {
     const { id } = req.params;
 

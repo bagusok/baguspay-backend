@@ -8,24 +8,23 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { ApiSecurity, ApiTags } from '@nestjs/swagger';
+import { ApiParam, ApiSecurity, ApiTags } from '@nestjs/swagger';
 import { TransactionService } from './transaction.service';
 import { Request } from 'express';
 import {
   cancelTransactionDto,
   createTransactionDto,
-  getAllTransactionsDto,
 } from './dtos/transaction.dto';
 import { Roles } from 'src/common/roles.decorator';
 import { TransactionGuard } from './transaction.guard';
-import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
-import { RolesGuard } from 'src/auth/guards/roles.guard';
+import { Role } from '@prisma/client';
 
 export interface IUserRequest extends Request {
   user: {
     id?: string;
     email?: string;
-    role?: 'ADMIN' | 'USER' | 'RESELLER';
+    role?: Role;
+    token: string;
   } | null;
 }
 
@@ -37,35 +36,32 @@ export class TransactionController {
   constructor(private readonly transactionService: TransactionService) {}
 
   @Get('list')
-  @Roles(['ADMIN', 'USER', 'RESELLER'])
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(TransactionGuard)
   async getAllTransactions(
     @Req() req: IUserRequest,
-    @Query() query?: getAllTransactionsDto,
+    @Query()
+    query?: {
+      page: number;
+      limit: number;
+      sortBy: string;
+      search: string;
+    },
   ) {
-    try {
-      const transactions = await this.transactionService.getAllTransactions(
-        req.user?.id ?? null,
-        req.user?.role ?? null,
-        query.page,
-        query.limit,
-        query.paidStatus,
-        query.orderStatus,
-        query.trxId,
-      );
+    const transactions = await this.transactionService.getAllTransactions(
+      req.user?.id ?? null,
+      req.user?.role ?? null,
+      {
+        page: query?.page ?? 1,
+        limit: query?.limit ?? 10,
+        sortBy: query?.sortBy ?? 'createdAt',
+        search: query?.search ?? '',
+      },
+    );
 
-      if (!transactions) {
-        throw new InternalServerErrorException('Failed to get transactions');
-      }
-
-      return transactions;
-    } catch (error) {
-      return new InternalServerErrorException(error);
-    }
+    return transactions;
   }
 
   @Post('create')
-  @Roles(['ADMIN'])
   async createTransaction(
     @Req() req: IUserRequest,
     @Body() body: createTransactionDto,
@@ -76,7 +72,7 @@ export class TransactionController {
   }
 
   @Post('cancel')
-  @Roles(['ADMIN'])
+  @Roles([Role.ADMIN])
   async cancelTransaction(
     @Body() body: cancelTransactionDto,
     @Req() req: IUserRequest,
@@ -99,5 +95,11 @@ export class TransactionController {
     } catch (error) {
       return new InternalServerErrorException(error);
     }
+  }
+
+  @Get('detail/:id')
+  @ApiParam({ name: 'id', required: true })
+  async getTransactionDetail(@Req() req: IUserRequest) {
+    return await this.transactionService.getTransactionById(req.params.id);
   }
 }
