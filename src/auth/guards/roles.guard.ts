@@ -1,7 +1,7 @@
 import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { Role } from '@prisma/client';
 import { Roles } from 'src/common/roles.decorator';
-import { IRole } from '../auth.service';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -9,6 +9,7 @@ export class RolesGuard implements CanActivate {
 
   canActivate(context: ExecutionContext): boolean {
     const roles = this.reflector.get(Roles, context.getHandler());
+
     console.log('Roles', roles);
     if (!roles) {
       return false;
@@ -20,6 +21,7 @@ export class RolesGuard implements CanActivate {
   }
 }
 
-function matchRoles(roles: IRole[], userRoles: IRole) {
+function matchRoles(roles: Role[], userRoles: Role) {
+  console.log('MatchRoles', roles, userRoles);
   return roles.some((role) => role === userRoles);
 }

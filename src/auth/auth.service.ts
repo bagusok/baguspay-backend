@@ -1,15 +1,10 @@
-import {
-  HttpException,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { BadRequestException, HttpException, Injectable } from '@nestjs/common';
+import { PrismaService } from 'src/modules/prisma/prisma.service';
 import { RegisterDto } from './dtos/register.dto';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { Role } from '@prisma/client';
-
-export type IRole = Role | 'ADMIN' | 'USER' | 'RESELLER';
+import { CustomException } from 'src/common/custom.exception';
 
 @Injectable()
 export class AuthService {
@@ -62,54 +57,156 @@ export class AuthService {
     };
   }
 
-  async login(email: string, password: string) {
-    const user = await this.prismaService.user.findFirst({
-      where: {
-        email,
-      },
-    });
-
-    if (!user) {
-      throw new HttpException('Email or Password is Wrong', 404);
+  async login({
+    email,
+    password,
+    deviceId,
+    userAgent,
+    ip,
+  }: {
+    email: string;
+    password: string;
+    deviceId: string;
+    userAgent: string;
+    ip: string;
+  }) {
+    if (!deviceId) {
+      throw new BadRequestException('Device ID is required');
     }
 
-    const checkPassword = await bcrypt.compare(password, user.password);
+    try {
+      const user = await this.prismaService.user.findFirst({
+        where: {
+          email,
+        },
+      });
+      console.log(user);
 
-    if (!checkPassword) {
-      throw new UnauthorizedException('Email or Password is wrong');
+      if (!user) {
+        throw new CustomException(401, 'Email or Password is wrong');
+      }
+
+      const checkPassword = await bcrypt.compare(password, user.password);
+
+      if (!checkPassword) {
+        throw new CustomException(401, 'Email or Password is wrong');
+      }
+
+      const genJwt = await this.jwtService.signAsync(
+        {
+          userId: user.id,
+          username: user.username,
+          role: user.role,
+        },
+        {
+          expiresIn: '7d',
+        },
+      );
+
+      const searchByDeviceId = await this.prismaService.loginHistory.findFirst({
+        where: {
+          deviceId,
+          userId: user.id,
+        },
+      });
+
+      if (searchByDeviceId) {
+        await this.prismaService.loginHistory.update({
+          where: {
+            id: searchByDeviceId.id,
+          },
+          data: {
+            userAgent,
+            ip,
+            token: genJwt,
+            expiredAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
+            isDeleted: false,
+          },
+        });
+      } else {
+        await this.prismaService.loginHistory.create({
+          data: {
+            userId: user.id,
+            deviceId,
+            userAgent,
+            ip,
+            token: genJwt,
+            expiredAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
+          },
+        });
+      }
+
+      return {
+        statusCode: 200,
+        message: 'Login success',
+        data: {
+          token: genJwt,
+        },
+      };
+    } catch (err) {
+      throw new HttpException(
+        err.publicMessage || err.message,
+        err.status || 500,
+      );
     }
-
-    const genJwt = await this.jwtService.signAsync({
-      userId: user.id,
-      username: user.username,
-      role: user.role,
-    });
-
-    return {
-      statusCode: 200,
-      message: 'Login success',
-      data: {
-        token: genJwt,
-      },
-    };
   }
 
-  async validateUser(userId: string, username: string, role: IRole) {
-    const user = await this.prismaService.user.findUnique({
+  async validateUser(
+    jwt: string,
+    userId: string,
+    username: string,
+    role: Role,
+  ) {
+    // const user = await this.prismaService.user.findUnique({
+    //   where: {
+    //     id: userId,
+    //   },
+    //   select: {
+    //     username: true,
+    //     role: true,
+    //     id: true,
+    //   },
+    // });
+    // if (!user || user.username !== username || user.role !== role) {
+    //   return null;
+    // }
+    // return user;
+
+    const checkJwt = await this.prismaService.loginHistory.findFirst({
       where: {
-        id: userId,
+        token: jwt,
+        user: {
+          id: userId,
+          username,
+          role,
+        },
+        isDeleted: false,
+        expiredAt: {
+          gte: new Date(),
+        },
       },
-      select: {
-        username: true,
-        role: true,
-        id: true,
+      include: {
+        user: {
+          select: {
+            username: true,
+            role: true,
+            id: true,
+          },
+        },
       },
     });
 
-    if (!user || user.username !== username || user.role !== role) {
+    // console.log(jwt, checkJwt, userId, username, role);
+
+    if (!checkJwt) {
       return null;
     }
 
-    return user;
+    return {
+      username: checkJwt.user.username,
+      role: checkJwt.user.role,
+      id: checkJwt.user.id,
+      token: jwt,
+    };
   }
 }
