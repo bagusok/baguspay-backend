@@ -3,12 +3,19 @@ import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
 import { PrismaModule } from 'src/modules/prisma/prisma.module';
 import { UiModule } from './ui/ui.module';
-import { BalanceController } from './balance/balance.controller';
 import { BalanceModule } from 'src/modules/payment/providers/balance/balance.module';
+import { AuthModule } from 'src/auth/auth.module';
+import { UserBalanceModule } from './user-balance/user-balance.module';
 
 @Module({
-  controllers: [UsersController, BalanceController],
+  controllers: [UsersController],
   providers: [UsersService],
-  imports: [PrismaModule, UiModule, BalanceModule],
+  imports: [
+    PrismaModule,
+    UiModule,
+    BalanceModule,
+    AuthModule,
+    UserBalanceModule,
+  ],
 })
 export class UsersModule {}

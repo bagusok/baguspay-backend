@@ -27,6 +27,7 @@ export class DigiflazzService {
   }
 
   public async createTransaction(data: {
+    commands: null | 'pay-pasca' | 'inq-pasca';
     buyer_sku_code: string;
     customer_no: string;
     ref_id: string;
@@ -48,6 +49,35 @@ export class DigiflazzService {
         }),
       });
       const createJson = await create.json();
+      return createJson;
+    } catch (err) {
+      throw new InternalServerErrorException(err.message);
+    }
+  }
+
+  public async checkTagihan(data: {
+    buyer_sku_code: string;
+    customer_no: string;
+    ref_id: string;
+  }) {
+    const testing = process.env.MODE == 'dev' ? true : false;
+
+    try {
+      const create = await fetch(`${this.apiUrl}/transaction`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          commands: 'inq-pasca',
+          username: this.username,
+          sign: this.createSign(data.ref_id),
+          testing: testing,
+          ...data,
+        }),
+      });
+      const createJson = await create.json();
+      console.log('data check tagihan', createJson);
       return createJson;
     } catch (err) {
       throw new InternalServerErrorException(err.message);

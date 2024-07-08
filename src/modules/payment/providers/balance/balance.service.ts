@@ -94,7 +94,7 @@ export class BalanceService {
     userId: string,
     {
       page = 1,
-      limit = 10,
+      limit = 15,
     }: {
       page?: number;
       limit?: number;

@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNumber, IsUUID } from 'class-validator';
+import { IsNumber, IsString, IsUUID } from 'class-validator';
 
 export class getPaymentMethodDto {
   @ApiProperty({
@@ -16,4 +16,10 @@ export class getPaymentMethodDto {
     allowInfinity: false,
   })
   qty: number;
+}
+
+export class getPaymentMethodInquiryDto {
+  @ApiProperty()
+  @IsString()
+  inquiryId: string;
 }

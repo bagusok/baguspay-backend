@@ -1,4 +1,4 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Post, Req } from '@nestjs/common';
 import { CallbackService } from './callback.service';
 
 @Controller('callback')
@@ -10,5 +10,10 @@ export class CallbackController {
     console.log(data);
 
     return await this.callbackService.paydisiniCallback(data);
+  }
+
+  @Post('digiflazz')
+  async digiflazzService(@Body() data: any, @Req() req: any) {
+    return await this.callbackService.digiflazzCallback(req, data);
   }
 }

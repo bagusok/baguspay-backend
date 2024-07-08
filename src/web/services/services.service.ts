@@ -142,13 +142,14 @@ export class ServicesService {
         },
       });
 
+      if (!getSvc) throw new NotFoundException('Service not found');
+
       return {
         statusCode: 200,
         message: 'Success get service',
         data: getSvc,
       };
     } catch (e) {
-      console.log(e);
       throw new NotFoundException('Service not found');
     }
   }

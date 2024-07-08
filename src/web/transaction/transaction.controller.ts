@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   InternalServerErrorException,
+  Param,
   Post,
   Query,
   Req,
@@ -13,11 +14,16 @@ import { TransactionService } from './transaction.service';
 import { Request } from 'express';
 import {
   cancelTransactionDto,
+  createInquiryDto,
   createTransactionDto,
+  PayInquiryDto,
+  UpdateStatusTransactionDto,
 } from './dtos/transaction.dto';
 import { Roles } from 'src/common/roles.decorator';
-import { TransactionGuard } from './transaction.guard';
-import { Role } from '@prisma/client';
+import { OrderStatus, PaidStatus, Role } from '@prisma/client';
+import { RolesGuard } from 'src/auth/guards/roles.guard';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { TransactionGuard } from 'src/auth/guards/transaction.guard';
 
 export interface IUserRequest extends Request {
   user: {
@@ -30,13 +36,14 @@ export interface IUserRequest extends Request {
 
 @ApiTags('Transaction')
 @ApiSecurity('access-token')
-@Controller('transaction')
+@Controller('')
 @UseGuards(TransactionGuard)
 export class TransactionController {
   constructor(private readonly transactionService: TransactionService) {}
 
-  @Get('list')
-  @UseGuards(TransactionGuard)
+  @Get('transaction/list')
+  @Roles([Role.ADMIN, Role.USER])
+  @UseGuards(JwtAuthGuard, RolesGuard)
   async getAllTransactions(
     @Req() req: IUserRequest,
     @Query()
@@ -61,7 +68,8 @@ export class TransactionController {
     return transactions;
   }
 
-  @Post('create')
+  @Post('transaction/create')
+  @UseGuards(TransactionGuard)
   async createTransaction(
     @Req() req: IUserRequest,
     @Body() body: createTransactionDto,
@@ -71,7 +79,7 @@ export class TransactionController {
     return await this.transactionService.createTransaction(userId, body);
   }
 
-  @Post('cancel')
+  @Post('transaction/cancel')
   @Roles([Role.ADMIN])
   async cancelTransaction(
     @Body() body: cancelTransactionDto,
@@ -97,9 +105,85 @@ export class TransactionController {
     }
   }
 
-  @Get('detail/:id')
+  @Get('transaction/detail/:id')
   @ApiParam({ name: 'id', required: true })
   async getTransactionDetail(@Req() req: IUserRequest) {
     return await this.transactionService.getTransactionById(req.params.id);
+  }
+
+  @Post('transaction/inquiry')
+  @UseGuards(TransactionGuard)
+  async inquiryTransaction(
+    @Req() req: IUserRequest,
+    @Body()
+    body: createInquiryDto,
+  ) {
+    const userId = req.user?.id ?? null;
+
+    return await this.transactionService.createInquiry({
+      userId,
+      ...body,
+    });
+  }
+
+  @Get('transaction/inquiry/detail/:id')
+  @UseGuards(TransactionGuard)
+  async getInquiry(@Param('id') id: string, @Req() req: IUserRequest) {
+    return await this.transactionService.getInquiryById(
+      id,
+      req.user?.id ?? null,
+    );
+  }
+
+  @Post('transaction/inquiry/pay')
+  async payInquiry(@Req() req: IUserRequest, @Body() body: PayInquiryDto) {
+    return await this.transactionService.payInquiry(body, req.user?.id ?? null);
+  }
+
+  @Get('admin/transactions')
+  @Roles([Role.ADMIN])
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  async getTransactions(
+    @Query()
+    query: {
+      page: number;
+      limit: number;
+      searchBy?: 'id' | 'userId';
+      sortBy?: string;
+      searchQuery?: string;
+      paidStatus: PaidStatus;
+      orderStatus: OrderStatus;
+      from: Date;
+      to: Date;
+    },
+  ) {
+    return await this.transactionService.getAllTransactionByAdmin({
+      page: query.page ?? 1,
+      limit: query.limit ?? 20,
+      searchBy: query.searchBy,
+      sortBy: query.sortBy ?? 'createdAt.desc',
+      searchQuery: query.searchQuery,
+      paidStatus: query.paidStatus,
+      orderStatus: query.orderStatus,
+      from: query.from,
+      to: query.to,
+    });
+  }
+
+  @Get('admin/transactions/:id')
+  @Roles([Role.ADMIN])
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  async getTransactionById(@Param('id') id: string) {
+    return await this.transactionService.getTransactionById(id);
+  }
+
+  @Post('admin/transactions/update-status')
+  @Roles([Role.ADMIN])
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  async updateTransactionStatus(
+    @Body()
+    body: UpdateStatusTransactionDto,
+  ) {
+    return await this.transactionService.updateStatusTransaction(body);
   }
 }

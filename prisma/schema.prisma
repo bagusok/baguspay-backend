@@ -31,12 +31,13 @@ model User {
   balance Int @default(0)
   point   Int @default(0)
 
-  verifiedAt      DateTime?
-  createdAt       DateTime          @default(now())
-  Transactions    Transactions[]
-  BalanceMutation BalanceMutation[]
-  Deposit         Deposit[]
-  loginHistory    LoginHistory[]
+  verifiedAt         DateTime?
+  createdAt          DateTime             @default(now())
+  Transactions       Transactions[]
+  BalanceMutation    BalanceMutation[]
+  Deposit            Deposit[]
+  loginHistory       LoginHistory[]
+  TransactionInquiry TransactionInquiry[]
 
   @@map("users")
 }
@@ -196,15 +197,16 @@ model Products {
   cutOffStart String @default("00:00") @map("cut_off_start")
   cutOffEnd   String @default("00:00") @map("cut_off_end")
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  TransactionInquiry TransactionInquiry[]
 
   @@map("products")
 }
 
 enum ProductResponseType {
   DIRECT
-  DiRECT_RETURN
+  DIRECT_RETURN
   MANUAL
 }
 
@@ -339,6 +341,9 @@ model Transactions {
   updatedAt DateTime @updatedAt @map("updated_at")
   expiredAt DateTime @map("expired_at")
 
+  inquiry   TransactionInquiry? @relation(fields: [inquiryId], references: [id])
+  inquiryId String?             @unique @map("inquiry_id")
+
   @@map("transactions")
 }
 
@@ -350,10 +355,43 @@ enum sourceType {
   @@map("source_type")
 }
 
+model TransactionInquiry {
+  id              String          @id @unique @default(cuid())
+  customerNumber  String          @map("customer_number")
+  customerName    String?         @map("customer_name")
+  inquiryType     String          @default("OTHER") @map("inquiry_type")
+  inquiryProvider InquiryProvider @default(DIGIFLAZZ) @map("inquiry_provider")
+  product         Products        @relation(fields: [productId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  productId       String          @map("product_id")
+  qty             Int             @default(1)
+  price           Int
+  totalPrice      Int             @map("total_price")
+  fees            Int             @default(0)
+  inquiryData     Json            @map("inquiry_data")
+
+  phoneNumber String @map("phone_number")
+
+  status OrderStatus @default(PENDING)
+
+  user   User?   @relation(fields: [userId], references: [id])
+  userId String? @map("user_id")
+
+  createdAt    DateTime      @default(now()) @map("created_at")
+  Transactions Transactions?
+
+  @@map("transaction_inquiry")
+}
+
+enum InquiryProvider {
+  DIGIFLAZZ
+
+  @@map("inquiry_provider")
+}
+
 enum PaidStatus {
   PENDING
   PAID
-  CANCELLED
+  CANCELED
   EXPIRED
 
   @@map("paid_status")
@@ -364,7 +402,7 @@ enum OrderStatus {
   PROCESS
   SUCCESS
   FAILED
-  CANCELLED
+  CANCELED
 
   @@map("order_status")
 }
@@ -463,13 +501,15 @@ model Deposit {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
   expiredAt DateTime @map("expired_at")
+
+  @@map("deposit")
 }
 
 enum DepositStatus {
   PENDING
   PROCESS
   SUCCESS
-  CANCELLED
+  CANCELED
   EXPIRED
 
   @@map("deposit_status")

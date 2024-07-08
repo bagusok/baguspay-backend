@@ -91,9 +91,11 @@ export class FilePickerService {
 
     try {
       const result = await this.s3Client.send(command);
-      if (result?.$metadata.httpStatusCode !== 200) {
-        return new BadRequestException("Can't upload file");
-      }
+      // if (result?.$metadata.httpStatusCode !== 200) {
+      //   return new BadRequestException("Can't upload file");
+      // }
+
+      // console.log('result', result);
 
       const newResult = result?.Contents.map((item) => {
         return {

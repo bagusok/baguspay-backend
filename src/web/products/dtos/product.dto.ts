@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { ProductResponseType, ProviderH2H, ServiceType } from '@prisma/client';
 import {
   IsBoolean,
   IsEnum,
@@ -6,21 +7,6 @@ import {
   IsOptional,
   IsString,
 } from 'class-validator';
-
-type Type =
-  | 'GAME_DIRECT'
-  | 'GAME_VOUCHER'
-  | 'TAGIHAN'
-  | 'PULSA'
-  | 'PAKET_DATA'
-  | 'E_MONEY'
-  | 'AKUN_PREMIUM'
-  | 'SMM'
-  | 'LAINNYA';
-
-type TypeResponse = 'DIRECT' | 'DiRECT_RETURN' | 'MANUAL';
-
-type IH2HProvider = 'DIGIFLAZZ' | 'VIPRESELLER' | 'VOCAGAMES' | 'APIGAMES';
 
 export class CreateProductDto {
   @IsString()
@@ -61,32 +47,22 @@ export class CreateProductDto {
   @ApiProperty()
   stock: number;
 
-  @IsEnum([
-    'GAME_DIRECT',
-    'GAME_VOUCHER',
-    'TAGIHAN',
-    'PULSA',
-    'PAKET_DATA',
-    'E_MONEY',
-    'AKUN_PREMIUM',
-    'SMM',
-    'LAINNYA',
-  ])
+  @IsEnum(ServiceType)
   @ApiProperty()
-  type: Type;
+  type: ServiceType;
 
-  @IsEnum(['DIRECT', 'DiRECT_RETURN', 'MANUAL'])
+  @IsEnum(ProductResponseType)
   @ApiProperty()
-  typeResponse: TypeResponse;
+  typeResponse: ProductResponseType;
 
   @IsBoolean()
   @IsOptional()
   @ApiProperty()
   isAvailable: boolean;
 
-  @IsEnum(['DIGIFLAZZ', 'VIPRESELLER', 'VOCAGAMES', 'APIGAMES'])
+  @IsEnum(ProviderH2H)
   @ApiProperty()
-  h2hProvider: IH2HProvider;
+  h2hProvider: ProviderH2H;
 
   @IsString()
   @ApiProperty()
@@ -157,35 +133,25 @@ export class UpdateProductDto {
   @IsNumber()
   profitResellerInPercent: number;
 
-  @IsEnum([
-    'GAME_DIRECT',
-    'GAME_VOUCHER',
-    'TAGIHAN',
-    'PULSA',
-    'PAKET_DATA',
-    'E_MONEY',
-    'AKUN_PREMIUM',
-    'SMM',
-    'LAINNYA',
-  ])
+  @IsEnum(ServiceType)
   @IsOptional()
   @ApiProperty()
-  type: Type;
+  type: ServiceType;
 
-  @IsEnum(['DIRECT', 'DiRECT_RETURN', 'MANUAL'])
+  @IsEnum(ProductResponseType)
   @ApiProperty()
   @IsOptional()
-  typeResponse: TypeResponse;
+  typeResponse: ProductResponseType;
 
   @IsBoolean()
   @IsOptional()
   @ApiProperty()
   isAvailable: boolean;
 
-  @IsEnum(['DIGIFLAZZ', 'VIPRESELLER', 'VOCAGAMES', 'APIGAMES'])
+  @IsEnum(ProviderH2H)
   @IsOptional()
   @ApiProperty()
-  h2hProvider: IH2HProvider;
+  h2hProvider: ProviderH2H;
 
   @IsString()
   @IsOptional()

@@ -6,7 +6,12 @@ import {
   Processor,
 } from '@nestjs/bull';
 import { Logger } from '@nestjs/common';
-import { BalanceRefType, OrderStatus } from '@prisma/client';
+import {
+  BalanceRefType,
+  OrderStatus,
+  RefundStatus,
+  ServiceType,
+} from '@prisma/client';
 import { Job } from 'bull';
 import { DigiflazzService } from 'src/modules/h2hprovider/digiflazz/digiflazz.service';
 import { BalanceService } from 'src/modules/payment/providers/balance/balance.service';
@@ -52,8 +57,14 @@ export class QueueConsumer {
 
       switch (findProduct.h2hProvider) {
         case 'DIGIFLAZZ':
+          let cmd = null;
+          if (findProduct.type == ServiceType.TAGIHAN) {
+            cmd = 'pay-pasca';
+          }
+
           const createDigiflazz = await this.digiflazzService.createTransaction(
             {
+              commands: cmd,
               buyer_sku_code: findProduct.idProductProvider,
               customer_no: findTrx.inputData.replace(':', ''),
               ref_id: findTrx.id,
@@ -72,7 +83,7 @@ export class QueueConsumer {
             trxStatus = 'FAILED';
           }
 
-          await this.prismaService.transactions.update({
+          const updatedTx = await this.prismaService.transactions.update({
             data: {
               orderStatus: trxStatus,
               ...(trxStatus == 'FAILED' && { isRefunded: true }),
@@ -80,7 +91,10 @@ export class QueueConsumer {
                 trxStatus == 'FAILED' &&
                 findTrx.userId !== null && { refundStatus: 'PROCESS' }),
               ...(trxStatus == 'SUCCESS'
-                ? { notes: `SN: ${createDigiflazz?.data?.sn}` }
+                ? {
+                    snRef: `${createDigiflazz?.data?.sn}`,
+                    notes: createDigiflazz?.data?.message,
+                  }
                 : { notes: createDigiflazz?.data?.message }),
             },
             where: {
@@ -88,7 +102,11 @@ export class QueueConsumer {
             },
           });
 
-          if (trxStatus == 'FAILED' && findTrx.userId !== null) {
+          if (
+            trxStatus == 'FAILED' &&
+            findTrx.userId !== null &&
+            updatedTx.isRefunded
+          ) {
             await this.balanceService.addBalance(
               findTrx.userId,
               findTrx.totalPrice,
@@ -171,6 +189,70 @@ export class QueueConsumer {
       });
     } catch (e) {
       Logger.error('Process Transaction Error: ', e);
+    }
+  }
+
+  @Process('refund')
+  async processRefund(
+    job: Job<{
+      trxId: string;
+      userId: string;
+      isRefunded: boolean;
+      refundStatus: RefundStatus;
+    }>,
+  ) {
+    const findTrx = await this.prismaService.transactions.findUnique({
+      where: {
+        id: job.data.trxId,
+        paidStatus: 'PAID',
+        isRefunded: true,
+        refundStatus: {
+          not: 'SUCCESS',
+        },
+        userId: job.data.userId,
+      },
+    });
+
+    if (!findTrx) {
+      throw new Error('Transaction not found');
+    }
+
+    await this.balanceService.addBalance(
+      job.data.userId,
+      findTrx.totalPrice,
+      `REFUND - ${findTrx.productName}`,
+      findTrx.id,
+      BalanceRefType.REFUND,
+      'Refund',
+    );
+
+    await this.prismaService.transactions.update({
+      data: {
+        refundStatus: 'SUCCESS',
+      },
+      where: {
+        id: findTrx.id,
+      },
+    });
+
+    await this.prismaService.products.update({
+      data: {
+        stock: {
+          increment: findTrx.productQty,
+        },
+      },
+      where: {
+        id: findTrx.productId,
+      },
+    });
+
+    Logger.log(
+      `Refund Processed for Transaction ID: ${findTrx.id} Successfully`,
+    );
+
+    try {
+    } catch (error) {
+      Logger.error('Process Refund Error: ', error);
     }
   }
 

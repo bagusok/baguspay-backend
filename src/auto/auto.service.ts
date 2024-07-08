@@ -69,7 +69,7 @@ export class AutoService {
               : getProducts.data[i].category == 'Games'
                 ? 'GAME_DIRECT'
                 : 'LAINNYA',
-          typeResponse: 'DiRECT_RETURN',
+          typeResponse: 'DIRECT',
           profit: 0,
           profitInPercent: profitInPercent * 100,
           resellerPrice: getProducts.data[i].price + 200,
@@ -140,8 +140,23 @@ export class AutoService {
     this.logger.log('Checking expired transaction');
     try {
       await this.prismaService
-        .$queryRaw`UPDATE transactions SET paid_status = 'EXPIRED' WHERE paid_status = 'PENDING' AND expired_at < NOW()`;
+        .$queryRaw`UPDATE transactions SET paid_status = 'EXPIRED' WHERE paid_status = 'PENDING' AND expired_at <= NOW() at TIME ZONE 'utc'`;
       this.logger.log('Expired transaction has been updated');
+    } catch (err) {
+      this.logger.error(err);
+    }
+  }
+
+  @Cron(CronExpression.EVERY_MINUTE, {
+    name: 'handle expired deposit',
+    timeZone: 'Asia/Jakarta',
+  })
+  async handleExpiredDeposit() {
+    this.logger.log('Checking expired deposit');
+    try {
+      await this.prismaService
+        .$queryRaw`UPDATE Deposit SET deposit_status = 'EXPIRED' WHERE deposit_status = 'PENDING' AND expired_at <= NOW() at TIME ZONE 'utc'`;
+      this.logger.log('Expired deposit has been updated');
     } catch (err) {
       this.logger.error(err);
     }

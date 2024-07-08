@@ -16,6 +16,7 @@ import { ApiSecurity, ApiTags } from '@nestjs/swagger';
 import { IUserRequest } from '../transaction/transaction.controller';
 import { BalanceService } from 'src/modules/payment/providers/balance/balance.service';
 import { Role } from '@prisma/client';
+import { TransactionGuard } from 'src/auth/guards/transaction.guard';
 
 @ApiTags('Users')
 @ApiSecurity('access-token')
@@ -44,8 +45,7 @@ export class UsersController {
   }
 
   @Get('/ping')
-  @Roles(['ADMIN', Role.USER])
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(TransactionGuard)
   async ping(@Req() req: Request) {
     console.log('user', req.user);
     return await this.usersService.findUser(req.user);
@@ -75,5 +75,12 @@ export class UsersController {
       message: 'Success',
       data: getBalance,
     });
+  }
+
+  @Get('/deposit/get-payment')
+  @Roles([Role.ADMIN, Role.USER])
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  async getPaymentDeposit() {
+    return await this.usersService.getPaymentDeposit();
   }
 }

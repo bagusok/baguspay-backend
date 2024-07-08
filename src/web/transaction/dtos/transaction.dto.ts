@@ -1,27 +1,14 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { OrderStatus, PaidStatus, RefundStatus } from '@prisma/client';
 import {
   IsBoolean,
   IsDateString,
   IsEnum,
   IsNumber,
   IsOptional,
+  IsPhoneNumber,
   IsString,
 } from 'class-validator';
-export enum EPaidStatus {
-  PENDING = 'PENDING',
-  PAID = 'PAID',
-  CANCELLED = 'CANCELLED',
-  EXPIRED = 'EXPIRED',
-}
-
-export enum EOrderStatus {
-  PENDING = 'PENDING',
-  PROCESS = 'PROCESS',
-  SUCCESS = 'SUCCESS',
-  CANCELLED = 'CANCELLED',
-  FAILED = 'FAILED',
-}
-type RefundStatus = 'NONE' | 'PENDING' | 'PROCESS' | 'SUCCESS' | 'FAILED';
 
 export class createTransactionDto {
   @ApiProperty()
@@ -76,20 +63,20 @@ export class createTransactionDto {
   expiredAt: Date;
 }
 
-export class updateTransactionDto {
+export class UpdateStatusTransactionDto {
   @ApiProperty()
   @IsString()
   id: string;
 
   @ApiProperty()
-  @IsEnum(['PENDING', 'PAID', 'CANCELLED', 'EXPIRED'])
+  @IsEnum(PaidStatus)
   @IsOptional()
-  paidStatus: EPaidStatus;
+  paidStatus: PaidStatus;
 
   @ApiProperty()
-  @IsEnum(['PENDING', 'PROCESS', 'SUCCESS', 'FAILED', 'CANCELLED'])
+  @IsEnum(OrderStatus)
   @IsOptional()
-  orderStatu: EOrderStatus;
+  orderStatus: OrderStatus;
 
   @ApiProperty()
   @IsBoolean()
@@ -97,7 +84,7 @@ export class updateTransactionDto {
   isRefunded: boolean;
 
   @ApiProperty()
-  @IsEnum(['NONE', 'PENDING', 'PROCESS', 'SUCCESS', 'FAILED'])
+  @IsEnum(RefundStatus)
   @IsOptional()
   refundStatus: RefundStatus;
 }
@@ -106,4 +93,36 @@ export class cancelTransactionDto {
   @ApiProperty()
   @IsString()
   trxId: string;
+}
+
+export class createInquiryDto {
+  @ApiProperty()
+  @IsString()
+  customerNumber: string;
+
+  @ApiProperty()
+  @IsString()
+  productId: string;
+
+  @ApiProperty()
+  @IsPhoneNumber('ID')
+  phoneNumber: string;
+}
+
+export class PayInquiryDto {
+  @ApiProperty()
+  @IsString()
+  inquiryId: string;
+
+  @ApiProperty()
+  @IsString()
+  paymentMethodId: string;
+
+  @ApiProperty()
+  @IsString()
+  paymentName: string;
+
+  @ApiProperty()
+  @IsNumber()
+  totalPrice: number;
 }

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import {
   ICallbackPaymentParams,
   PaymentService,
@@ -6,6 +6,8 @@ import {
 import { ICallbackPaydisiniParams } from 'src/modules/payment/providers/paydisini/paydisini.service';
 import { PrismaService } from 'src/modules/prisma/prisma.service';
 import { QueueService } from 'src/queue/queue.service';
+import * as crypto from 'crypto';
+import { OrderStatus } from '@prisma/client';
 
 @Injectable()
 export class CallbackService {
@@ -66,7 +68,7 @@ export class CallbackService {
           success: 'true',
         };
       } else {
-        const paidStatus = _data.status == 'Success' ? 'PAID' : 'CANCELLED';
+        const paidStatus = _data.status == 'Success' ? 'PAID' : 'CANCELED';
 
         const updateTrx = await this.prismaService.transactions.update({
           data: {
@@ -114,5 +116,55 @@ export class CallbackService {
         message: 'Transaction not found or Already Paid or Expired',
       };
     }
+  }
+
+  async digiflazzCallback(req: any, data: any) {
+    const signature = crypto
+      .createHmac('sha1', process.env.DIGIFLAZZ_CALLBACK_SECRET)
+      .update(JSON.stringify(data))
+      .digest('hex');
+
+    console.log('Signature', data);
+
+    if (req.headers['x-hub-signature'].replace('sha1=', '') != signature) {
+      Logger.error('Invalid Signature');
+      return {
+        success: 'false',
+        message: 'Invalid Signature',
+      };
+    }
+
+    let status = 'FAILED';
+    if (data.data.status == 'Sukses') {
+      status = 'SUCCESS';
+    } else {
+      status = 'FAILED';
+    }
+
+    const updateTransactionDto = await this.prismaService.transactions.update({
+      data: {
+        orderStatus: status as OrderStatus,
+        snRef: data.data.sn,
+      },
+      where: {
+        id: data.data.ref_id,
+      },
+    });
+
+    if (!updateTransactionDto) {
+      return {
+        success: 'false',
+        message: 'Transaction not found',
+      };
+    }
+
+    return {
+      success: 'true',
+    };
+
+    return {
+      success: 'false',
+      message: 'No Operation Found',
+    };
   }
 }

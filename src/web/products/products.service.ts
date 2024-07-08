@@ -158,7 +158,7 @@ export class ProductsService {
       _data.profitReseller +
       _data.priceFromProvider * (_data.profitResellerInPercent / 100);
 
-    const data: Prisma.ProductsCreateInput = {
+    const data: Prisma.ProductsUpdateInput = {
       ..._data,
       ...(isPriceThere && { price }),
       ...(isResellerPriceThere && { resellerPrice }),

@@ -1,6 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { PaymentMethodProvider, PaymentMethodType } from '@prisma/client';
 import {
+  PaymentAllowAccess,
+  PaymentMethodProvider,
+  PaymentMethodType,
+} from '@prisma/client';
+import {
+  IsArray,
   IsBoolean,
   IsEnum,
   IsNumber,
@@ -79,6 +84,10 @@ export class CreatePaymentMethodDto {
   @IsOptional()
   @IsString()
   cutOffEnd: string;
+
+  @ApiProperty()
+  @IsArray()
+  paymentAllowAccess: PaymentAllowAccess[];
 }
 
 export class UpdatePaymentMethodDto {
@@ -97,17 +106,7 @@ export class UpdatePaymentMethodDto {
 
   @ApiProperty()
   @IsOptional()
-  @IsEnum([
-    'TRANSFER_BANK',
-    'TRANSFER_EWALLET',
-    'DIRECT_EWALLET',
-    'VIRTUAL_ACCOUNT',
-    'RETAIL_OUTLET',
-    'CREDIT_CARD',
-    'LINK_PAYMENT',
-    'OTHER',
-    'QR_CODE',
-  ])
+  @IsEnum(PaymentMethodType)
   type: PaymentMethodType;
 
   @ApiProperty()
@@ -164,6 +163,11 @@ export class UpdatePaymentMethodDto {
   @IsOptional()
   @IsString()
   cutOffEnd: string;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsArray()
+  paymentAllowAccess: PaymentAllowAccess[];
 }
 
 export class DeletePaymentMethodDto {
