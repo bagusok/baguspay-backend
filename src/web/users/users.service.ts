@@ -1,5 +1,12 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
-import { PaymentAllowAccess } from '@prisma/client';
+import {
+  ForbiddenException,
+  HttpException,
+  HttpStatus,
+  Injectable,
+} from '@nestjs/common';
+import { OrderStatus, PaymentAllowAccess } from '@prisma/client';
+import { groupBy } from 'rxjs';
+import { CustomError } from 'src/common/custom.error';
 import { PrismaService } from 'src/modules/prisma/prisma.service';
 import { v4 as uuid } from 'uuid';
 
@@ -7,8 +14,46 @@ import { v4 as uuid } from 'uuid';
 export class UsersService {
   constructor(private readonly prismaService: PrismaService) {}
 
-  async findAll() {
-    return await this.prismaService.user.findMany();
+  async findAll(query: {
+    page: number;
+    limit: number;
+    searchBy?: 'id' | 'username' | 'email';
+    searchQuery?: string;
+    sortBy: string;
+    from?: Date;
+    to?: Date;
+  }) {
+    const orderBy = {
+      [query.sortBy?.split('.')[0]]: query.sortBy?.split('.')[1],
+    };
+    const users = await this.prismaService.user.findMany({
+      where: {
+        ...(query.searchQuery && {
+          [query.searchBy]: {
+            contains: query.searchQuery,
+            mode: 'insensitive',
+          },
+        }),
+        createdAt: {
+          ...(query.from && {
+            gte: new Date(query.from),
+          }),
+          ...(query.to && {
+            lte: new Date(query.to),
+          }),
+        },
+      },
+      orderBy: {
+        ...orderBy,
+      },
+      skip: (query.page - 1) * query.limit,
+      take: query.limit,
+    });
+    return {
+      statusCode: 200,
+      message: 'Success',
+      data: users,
+    };
   }
 
   async findUser(user: any) {
@@ -109,5 +154,384 @@ export class UsersService {
       message: 'Success',
       data: _datas,
     };
+  }
+
+  async getUserDetailByAdmin(userId: string) {
+    try {
+      const user = await this.prismaService.user.findUnique({
+        where: {
+          id: userId,
+        },
+        include: {
+          loginHistory: true,
+        },
+      });
+
+      if (!user) throw new CustomError(HttpStatus.NOT_FOUND, 'User not found');
+
+      return {
+        statusCode: 200,
+        message: 'Success',
+        data: user,
+      };
+    } catch (error) {
+      throw new HttpException(
+        error.publicMessage || 'Internal Server Error',
+        error.status || 500,
+      );
+    }
+  }
+
+  async getUsersBalanceMutation(query: {
+    page: number;
+    limit: number;
+    searchBy?: 'id' | 'userId';
+    searchQuery?: string;
+    sortBy: string;
+    from?: Date;
+    to?: Date;
+  }) {
+    const orderBy = {
+      [query.sortBy?.split('.')[0]]: query.sortBy?.split('.')[1],
+    };
+    const users = await this.prismaService.balanceMutation.findMany({
+      where: {
+        ...(query.searchQuery && {
+          [query.searchBy]: {
+            contains: query.searchQuery,
+            mode: 'insensitive',
+          },
+        }),
+        createdAt: {
+          ...(query.from && {
+            gte: new Date(query.from),
+          }),
+          ...(query.to && {
+            lte: new Date(query.to),
+          }),
+        },
+      },
+      orderBy: {
+        ...orderBy,
+      },
+      skip: (query.page - 1) * query.limit,
+      take: query.limit,
+      include: {
+        user: {
+          select: {
+            id: true,
+            username: true,
+          },
+        },
+      },
+    });
+    return {
+      statusCode: 200,
+      message: 'Success',
+      data: users,
+    };
+  }
+
+  async getChartTransactionByUser(userId: string) {
+    try {
+      const user = await this.prismaService.user.findUnique({
+        where: {
+          id: userId,
+        },
+      });
+
+      if (!user) throw new CustomError(HttpStatus.NOT_FOUND, 'User not found');
+
+      const result30Days: any = await this.prismaService.$queryRaw`
+        SELECT
+          date_trunc('day', "created_at") as day,
+          "source_type",
+          COUNT(*) as count,
+          SUM("total_price") as total
+        FROM
+          "transactions"
+        WHERE
+          "created_at" >= current_date - interval '30 days' AND "order_status" = 'SUCCESS' AND "user_id" = ${userId}
+        GROUP BY
+          date_trunc('day', "created_at"),
+          "source_type"
+        ORDER BY
+          day
+      `;
+
+      const result12Months: any = await this.prismaService.$queryRaw`
+        SELECT
+          date_trunc('month', "created_at") as month,
+          "source_type",
+          COUNT(*) as count,
+          SUM("total_price") as total
+        FROM
+          "transactions"
+        WHERE
+          "created_at" >= current_date - interval '12 months' AND "order_status" = 'SUCCESS' AND "user_id" = ${userId}
+        GROUP BY
+          date_trunc('month', "created_at"),
+          "source_type"
+        ORDER BY
+          month
+      `;
+
+      // Fill in the missing days for 30 days data
+      const today = new Date();
+      const days = [];
+      for (let i = 30; i >= 0; i--) {
+        const date = new Date(today);
+        date.setDate(today.getDate() - i);
+        const formattedDate = date.toISOString().slice(0, 10);
+        const dayResults = result30Days.filter(
+          (r) => r.day.toISOString().slice(0, 10) === formattedDate,
+        );
+        const counts = { mobile: 0, web: 0, all: 0 };
+        const totals = { mobile: 0, web: 0, all: 0 };
+        dayResults.forEach((r) => {
+          const count = Number(r.count.toString());
+          const total = Number(r.total.toString());
+          if (r.source_type === 'MOBILE') {
+            counts.mobile = count;
+            totals.mobile = total;
+          } else if (r.source_type === 'WEB') {
+            counts.web = count;
+            totals.web = total;
+          }
+          counts.all += count;
+          totals.all += total;
+        });
+        days.push({
+          day: formattedDate,
+          counts,
+          ...totals,
+        });
+      }
+
+      // Fill in the missing months for 12 months data
+      const months = [];
+      for (let i = 11; i >= 0; i--) {
+        const date = new Date(today);
+        date.setMonth(today.getMonth() - i);
+        const formattedMonth = date.toLocaleString('default', {
+          month: 'long',
+        });
+        const monthResults = result12Months.filter(
+          (r) =>
+            r.month.toISOString().slice(0, 7) ===
+            date.toISOString().slice(0, 7),
+        );
+        const counts = { mobile: 0, web: 0, all: 0 };
+        const totals = { mobile: 0, web: 0, all: 0 };
+        monthResults.forEach((r) => {
+          const count = Number(r.count.toString());
+          const total = Number(r.total.toString());
+          if (r.source_type === 'MOBILE') {
+            counts.mobile = count;
+            totals.mobile = total;
+          } else if (r.source_type === 'WEB') {
+            counts.web = count;
+            totals.web = total;
+          }
+          counts.all += count;
+          totals.all += total;
+        });
+        months.push({
+          month: formattedMonth,
+          counts: counts,
+          ...totals,
+        });
+      }
+
+      return {
+        statusCode: 200,
+        message: 'Success',
+        data: {
+          last30Days: days,
+          last12Months: months,
+        },
+      };
+    } catch (error) {
+      console.log(error.message);
+      throw new HttpException(
+        error.publicMessage || 'Internal Server Error',
+        error.status || 500,
+      );
+    }
+  }
+
+  async getChartBalanceMutationByUser(userId: string) {
+    try {
+      const result30Days: any = await this.prismaService.$queryRaw`
+      SELECT
+        date_trunc('day', "created_at") as day,
+        "type",
+        SUM("amount") as amount
+      FROM
+        "balance_mutation"
+      WHERE
+        "created_at" >= current_date - interval '30 days' AND "user_id" = ${userId}
+      GROUP BY
+        date_trunc('day', "created_at"),
+        "type"
+      ORDER BY
+        day
+    `;
+
+      const result12Months: any = await this.prismaService.$queryRaw`
+      SELECT
+        date_trunc('month', "created_at") as month,
+        "type",
+        SUM("amount") as amount
+      FROM
+        "balance_mutation"
+      WHERE
+        "created_at" >= current_date - interval '12 months' AND "user_id" = ${userId}
+      GROUP BY
+        date_trunc('month', "created_at"),
+        "type"
+      ORDER BY
+        month
+      `;
+
+      const today = new Date();
+      const days = [];
+      for (let i = 30; i >= 0; i--) {
+        const date = new Date(today);
+        date.setDate(today.getDate() - i);
+        const formattedDate = date.toISOString().slice(0, 10);
+        const dayResults = result30Days.filter(
+          (r) => r.day.toISOString().slice(0, 10) === formattedDate,
+        );
+        const totals = { in: 0, out: 0 };
+        dayResults.forEach((r) => {
+          const total = Number(r.amount.toString());
+          if (r.type === 'IN') {
+            totals.in = total;
+          } else if (r.type === 'OUT') {
+            totals.out = total;
+          }
+        });
+        days.push({
+          day: formattedDate,
+          ...totals,
+        });
+      }
+
+      const months = [];
+      for (let i = 11; i >= 0; i--) {
+        const date = new Date(today);
+        date.setMonth(today.getMonth() - i);
+        const formattedMonth = date.toLocaleString('default', {
+          month: 'long',
+        });
+        const monthResults = result12Months.filter(
+          (r) =>
+            r.month.toISOString().slice(0, 7) ===
+            date.toISOString().slice(0, 7),
+        );
+
+        const totals = { in: 0, out: 0 };
+        monthResults.forEach((r) => {
+          const total = Number(r.amount.toString());
+          if (r.type === 'IN') {
+            totals.in = total;
+          } else if (r.type === 'OUT') {
+            totals.out = total;
+          }
+        });
+        months.push({
+          month: formattedMonth,
+
+          ...totals,
+        });
+      }
+
+      return {
+        statusCode: 200,
+        message: 'Success',
+        data: {
+          last30Days: days,
+          last12Months: months,
+        },
+      };
+    } catch (error) {
+      console.log(error.message);
+      throw new HttpException(
+        error.publicMessage || 'Internal Server Error',
+        error.status || 500,
+      );
+    }
+  }
+
+  async getUserDetail(userId: string) {
+    try {
+      const getUser = await this.prismaService.user.findUnique({
+        where: {
+          id: userId,
+        },
+        select: {
+          id: true,
+          username: true,
+          email: true,
+          phone: true,
+          longName: true,
+          role: true,
+          balance: true,
+          isBanned: true,
+          isVerifEmail: true,
+          isVerifPhone: true,
+          verifiedAt: true,
+          createdAt: true,
+        },
+      });
+
+      if (!getUser) {
+        throw new CustomError(HttpStatus.NOT_FOUND, 'User not found');
+      }
+
+      const sumUsedBalance = await this.prismaService.balanceMutation.aggregate(
+        {
+          where: {
+            userId: userId,
+            type: 'OUT',
+            refType: {
+              in: ['WITHDRAW', 'TRANSFER', 'TRANSACTION'],
+            },
+          },
+          _sum: {
+            amount: true,
+          },
+          _count: true,
+        },
+      );
+
+      const sumTransaction = await this.prismaService.transactions.aggregate({
+        where: {
+          userId: userId,
+          orderStatus: OrderStatus.SUCCESS,
+        },
+        _sum: {
+          totalPrice: true,
+        },
+        _count: true,
+      });
+
+      return {
+        statusCode: 200,
+        message: 'Success',
+        data: {
+          ...getUser,
+          usedBalance: sumUsedBalance,
+          totalTransaction: sumTransaction,
+        },
+      };
+    } catch (error) {
+      console.log(error.message);
+      throw new HttpException(
+        error.publicMessage || 'Internal Server Error',
+        error.status || 500,
+      );
+    }
   }
 }

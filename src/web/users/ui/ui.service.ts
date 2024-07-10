@@ -104,7 +104,7 @@ export class UiService {
       ) {
         if (paymentMethod.type == 'SALDO') {
           if (userId) {
-            if (selected.total > totalPrice) {
+            if (selected.total > totalPrice && balance >= totalPrice) {
               selected = {
                 id: paymentMethod.id,
                 name:

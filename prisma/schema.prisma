@@ -44,7 +44,7 @@ model User {
 
 model LoginHistory {
   id        String @id @unique @default(uuid())
-  deviceId  String @unique @map("device_id")
+  deviceId  String @map("device_id")
   userAgent String @map("user_agent")
   ip        String @map("ip")
 

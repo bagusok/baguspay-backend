@@ -144,6 +144,7 @@ export class AuthService {
         },
       };
     } catch (err) {
+      console.log(err.message);
       throw new HttpException(
         err.publicMessage || err.message,
         err.status || 500,
