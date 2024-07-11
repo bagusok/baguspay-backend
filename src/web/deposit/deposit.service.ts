@@ -9,7 +9,11 @@ import { CustomError } from 'src/common/custom.error';
 import { PaymentService } from 'src/modules/payment/payment.service';
 import { BalanceService } from 'src/modules/payment/providers/balance/balance.service';
 import { PrismaService } from 'src/modules/prisma/prisma.service';
-import { CreateDepositDto, UpdateDepositDto } from './deposit.dto';
+import {
+  CancelDepositDto,
+  CreateDepositDto,
+  UpdateDepositDto,
+} from './deposit.dto';
 import * as crypto from 'crypto';
 import { DepositStatus, PaymentAllowAccess } from '@prisma/client';
 import { QueueService } from 'src/queue/queue.service';
@@ -441,6 +445,43 @@ export class DepositService {
       throw new HttpException(
         error.publicMessage || 'Internal Server Error',
         error.statusCode || HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async cancelDeposit(userId: string, data: CancelDepositDto) {
+    try {
+      const checkDepo = await this.prismaService.deposit.findFirst({
+        where: {
+          id: data.depositId,
+          depositStatus: DepositStatus.PENDING,
+          userId,
+        },
+      });
+      if (!checkDepo) {
+        throw new CustomError(404, 'Deposit not found, or status not pending');
+      }
+
+      const updateDepo = await this.prismaService.deposit.update({
+        where: {
+          id: data.depositId,
+        },
+        data: {
+          depositStatus: DepositStatus.CANCELED,
+        },
+      });
+      if (!updateDepo) {
+        throw new CustomError(500, 'Failed to cancel deposit');
+      }
+
+      return {
+        statusCode: 200,
+        message: 'Success cancel deposit',
+      };
+    } catch (error) {
+      throw new HttpException(
+        error.publicMessage || 'Internal Server Error',
+        error.statusCode || 500,
       );
     }
   }

@@ -23,7 +23,10 @@ export class AuthService {
             username,
           },
           {
-            email,
+            email: {
+              equals: email,
+              mode: 'insensitive',
+            },
           },
           {
             phone,
@@ -77,7 +80,10 @@ export class AuthService {
     try {
       const user = await this.prismaService.user.findFirst({
         where: {
-          email,
+          email: {
+            equals: email,
+            mode: 'insensitive',
+          },
         },
       });
       console.log(user);

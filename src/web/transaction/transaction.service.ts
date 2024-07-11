@@ -347,7 +347,6 @@ export class TransactionService {
           id: trxId,
           userId: userId ?? null,
           paidStatus: 'PENDING',
-          orderStatus: 'PENDING',
         },
         include: {
           paymentMethod: true,
@@ -355,17 +354,7 @@ export class TransactionService {
       });
 
       if (!checkTransaction) {
-        return {
-          status: 404,
-          message: 'Transaction not found',
-        };
-      }
-
-      if (checkTransaction.paidStatus !== 'PENDING') {
-        return {
-          status: 400,
-          message: 'Transaction already paid, Cannot cancel transaction',
-        };
+        throw new CustomError(404, 'Transaction not found');
       }
 
       const cancelPayment = await this.paymentService.cancelPayment({
@@ -374,10 +363,7 @@ export class TransactionService {
       });
 
       if (!cancelPayment) {
-        return {
-          status: 500,
-          message: 'Failed to cancel payment',
-        };
+        throw new CustomError(422, 'Failed to cancel payment');
       }
 
       const updateTransaction = await this.prismaService.transactions.update({
@@ -391,10 +377,7 @@ export class TransactionService {
       });
 
       if (!updateTransaction) {
-        return {
-          status: 500,
-          message: 'Failed to cancel transaction',
-        };
+        throw new CustomError(422, 'Failed to cancel transaction');
       }
 
       return {
@@ -403,7 +386,10 @@ export class TransactionService {
       };
     } catch (error) {
       console.log(error);
-      return null;
+      throw new HttpException(
+        error.publicMessage || 'Internal Server Error',
+        error.statusCode || 500,
+      );
     }
   }
 

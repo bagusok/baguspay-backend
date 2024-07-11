@@ -80,29 +80,16 @@ export class TransactionController {
   }
 
   @Post('transaction/cancel')
-  @Roles([Role.ADMIN])
+  @Roles([Role.ADMIN, Role.USER])
   async cancelTransaction(
     @Body() body: cancelTransactionDto,
     @Req() req: IUserRequest,
   ) {
-    try {
-      const transaction = await this.transactionService.cancelTransaction(
-        req.user?.id ?? null,
-        null,
-        body.trxId,
-      );
-
-      if (!transaction) {
-        return {
-          status: 500,
-          message: 'Failed to cancel transaction',
-        };
-      }
-
-      return transaction;
-    } catch (error) {
-      return new InternalServerErrorException(error);
-    }
+    return await this.transactionService.cancelTransaction(
+      req.user?.id ?? null,
+      null,
+      body.trxId,
+    );
   }
 
   @Get('transaction/detail/:id')

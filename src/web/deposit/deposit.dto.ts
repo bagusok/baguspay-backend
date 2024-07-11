@@ -37,3 +37,9 @@ export class UpdateDepositDto {
   @IsOptional()
   fees: number;
 }
+
+export class CancelDepositDto {
+  @ApiProperty()
+  @IsString()
+  depositId: string;
+}

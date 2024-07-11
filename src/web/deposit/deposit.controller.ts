@@ -13,7 +13,11 @@ import { DepositService } from './deposit.service';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { Roles } from 'src/common/roles.decorator';
 import { IUserRequest } from '../transaction/transaction.controller';
-import { CreateDepositDto, UpdateDepositDto } from './deposit.dto';
+import {
+  CancelDepositDto,
+  CreateDepositDto,
+  UpdateDepositDto,
+} from './deposit.dto';
 import { DepositStatus, Role } from '@prisma/client';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
 
@@ -54,6 +58,15 @@ export class DepositController {
     return await this.depositService.getDepositDetail(id, req.user?.id);
   }
 
+  @Post('user/deposit/cancel')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles([Role.USER, Role.ADMIN])
+  async cancelDeposit(
+    @Req() req: IUserRequest,
+    @Body() body: CancelDepositDto,
+  ) {
+    return await this.depositService.cancelDeposit(req.user?.id, body);
+  }
   @Get('admin/deposit')
   @Roles([Role.ADMIN])
   @UseGuards(JwtAuthGuard, RolesGuard)
