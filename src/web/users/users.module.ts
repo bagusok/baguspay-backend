@@ -6,6 +6,7 @@ import { UiModule } from './ui/ui.module';
 import { BalanceModule } from 'src/modules/payment/providers/balance/balance.module';
 import { AuthModule } from 'src/auth/auth.module';
 import { UserBalanceModule } from './user-balance/user-balance.module';
+import { JwtModule } from '@nestjs/jwt';
 
 @Module({
   controllers: [UsersController],
@@ -16,6 +17,7 @@ import { UserBalanceModule } from './user-balance/user-balance.module';
     BalanceModule,
     AuthModule,
     UserBalanceModule,
+    JwtModule,
   ],
 })
 export class UsersModule {}

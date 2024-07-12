@@ -1,7 +1,9 @@
 import {
+  Body,
   Controller,
   Get,
   Param,
+  Post,
   Query,
   Req,
   Res,
@@ -17,6 +19,7 @@ import { IUserRequest } from '../transaction/transaction.controller';
 import { BalanceService } from 'src/modules/payment/providers/balance/balance.service';
 import { Role } from '@prisma/client';
 import { TransactionGuard } from 'src/auth/guards/transaction.guard';
+import { ChangeProfileByAdminDto, ChangeProfileDto } from './dtos/user.dto';
 
 @ApiTags('Users')
 @ApiSecurity('access-token')
@@ -124,6 +127,17 @@ export class UsersController {
     return await this.usersService.getUserDetailByAdmin(id);
   }
 
+  @Post('admin/users/:userId/update-profile')
+  @Roles([Role.ADMIN])
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  async changeProfileByAdmin(
+    @Req() req: IUserRequest,
+    @Param('userId') userId: string,
+    @Body() body: ChangeProfileByAdminDto,
+  ) {
+    return await this.usersService.changeProfile(userId, body);
+  }
+
   @Get('users/chart/transaction/:userId')
   @Roles([Role.ADMIN, Role.USER])
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -149,5 +163,18 @@ export class UsersController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   async getUserInfo(@Req() req: IUserRequest, @Param('userId') userId: string) {
     return await this.usersService.getUserDetail(userId);
+  }
+
+  @Post('users/update-profile')
+  @Roles([Role.USER, Role.ADMIN])
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  async changeProfile(
+    @Req() req: IUserRequest,
+    @Body() body: ChangeProfileDto,
+  ) {
+    return await this.usersService.changeProfile(
+      req.user.id,
+      body as ChangeProfileByAdminDto,
+    );
   }
 }

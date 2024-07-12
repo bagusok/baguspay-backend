@@ -5,10 +5,11 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { OrderStatus, PaymentAllowAccess } from '@prisma/client';
-import { groupBy } from 'rxjs';
+import * as bcrypt from 'bcrypt';
 import { CustomError } from 'src/common/custom.error';
 import { PrismaService } from 'src/modules/prisma/prisma.service';
 import { v4 as uuid } from 'uuid';
+import { ChangeProfileByAdminDto } from './dtos/user.dto';
 
 @Injectable()
 export class UsersService {
@@ -524,6 +525,83 @@ export class UsersService {
           ...getUser,
           usedBalance: sumUsedBalance,
           totalTransaction: sumTransaction,
+        },
+      };
+    } catch (error) {
+      console.log(error.message);
+      throw new HttpException(
+        error.publicMessage || 'Internal Server Error',
+        error.status || 500,
+      );
+    }
+  }
+
+  async changeProfile(userId: string, data: ChangeProfileByAdminDto) {
+    try {
+      if (data.password !== data.confirmPassword) {
+        throw new CustomError(
+          HttpStatus.BAD_REQUEST,
+          'Password and confirm password must be the same',
+        );
+      }
+
+      const checkUser = await this.prismaService.user.findUnique({
+        where: {
+          id: userId,
+        },
+      });
+
+      if (!checkUser) {
+        throw new CustomError(HttpStatus.NOT_FOUND, 'User not found');
+      }
+
+      let hashPasword = null;
+      if (data.password && data.password !== '') {
+        hashPasword = await await bcrypt.hash(data.password, 10);
+      }
+
+      delete data.confirmPassword;
+
+      const updateUser = await this.prismaService.user.update({
+        where: {
+          id: userId,
+        },
+        data: {
+          ...data,
+          ...(data.password && { password: hashPasword }),
+        },
+      });
+
+      if (!updateUser) {
+        throw new CustomError(
+          HttpStatus.INTERNAL_SERVER_ERROR,
+          'Failed update user profile',
+        );
+      }
+
+      if (
+        checkUser.longName === updateUser.longName &&
+        checkUser.username === updateUser.username &&
+        checkUser.email === updateUser.email &&
+        checkUser.phone === updateUser.phone &&
+        checkUser.password === updateUser.password &&
+        checkUser.role === updateUser.role &&
+        checkUser.isBanned === updateUser.isBanned
+      ) {
+        return {
+          statusCode: 200,
+          message: 'Nothing to update user',
+          data: {
+            updated: false,
+          },
+        };
+      }
+
+      return {
+        statusCode: 200,
+        message: 'Success update user profile',
+        data: {
+          updated: true,
         },
       };
     } catch (error) {
