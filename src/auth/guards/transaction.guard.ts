@@ -1,12 +1,15 @@
 import {
   CanActivate,
   ExecutionContext,
+  HttpException,
+  HttpStatus,
   Injectable,
-  UnauthorizedException,
+  Logger,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ExtractJwt } from 'passport-jwt';
 import { AuthService } from 'src/auth/auth.service';
+import { CustomError } from 'src/common/custom.error';
 
 @Injectable()
 export class TransactionGuard implements CanActivate {
@@ -27,7 +30,7 @@ export class TransactionGuard implements CanActivate {
 
       const payload = jwtService.verify(jwt);
       if (!payload) {
-        throw new UnauthorizedException();
+        throw new CustomError(HttpStatus.UNAUTHORIZED, 'Unauthorized');
       }
 
       const validate = await this.authService.validateUser(
@@ -38,14 +41,26 @@ export class TransactionGuard implements CanActivate {
       );
 
       if (!validate) {
-        throw new UnauthorizedException();
+        throw new CustomError(HttpStatus.UNAUTHORIZED, 'Unauthorized');
       }
 
       request.user = validate;
 
+      if (validate.isBanned) {
+        throw new CustomError(
+          HttpStatus.FORBIDDEN,
+          'User is banned, please contact admin',
+          'User is banned, please contact admin',
+        );
+      }
+
       return true;
     } catch (error) {
-      throw new UnauthorizedException();
+      Logger.error(error.message, error.stack, 'TransactionGuard');
+      throw new HttpException(
+        error.publicMessage || 'Internal server error',
+        error.statusCode || 500,
+      );
     }
   }
 }

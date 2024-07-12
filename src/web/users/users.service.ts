@@ -82,6 +82,7 @@ export class UsersService {
         email: true,
         role: true,
         balance: true,
+        isBanned: true,
       },
     });
 
@@ -544,6 +545,8 @@ export class UsersService {
           'Password and confirm password must be the same',
         );
       }
+
+      console.log(data);
 
       const checkUser = await this.prismaService.user.findUnique({
         where: {

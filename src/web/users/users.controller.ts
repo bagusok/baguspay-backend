@@ -33,7 +33,7 @@ export class UsersController {
   @Get('users/ping')
   @UseGuards(TransactionGuard)
   async ping(@Req() req: Request) {
-    console.log('user', req.user);
+    // console.log('user', req.user);
     return await this.usersService.findUser(req.user);
   }
 

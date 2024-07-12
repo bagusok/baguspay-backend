@@ -198,6 +198,7 @@ export class AuthService {
             username: true,
             role: true,
             id: true,
+            isBanned: true,
           },
         },
       },
@@ -214,6 +215,7 @@ export class AuthService {
       role: checkJwt.user.role,
       id: checkJwt.user.id,
       token: jwt,
+      isBanned: checkJwt.user.isBanned,
     };
   }
 }

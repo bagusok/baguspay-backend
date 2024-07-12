@@ -106,5 +106,5 @@ export class ChangeProfileByAdminDto {
   @ApiProperty()
   @IsOptional()
   @IsBoolean()
-  isBannded: boolean;
+  isBanned: boolean;
 }
