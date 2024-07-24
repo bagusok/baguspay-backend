@@ -8,6 +8,7 @@ import {
   IsOptional,
   IsPhoneNumber,
   IsString,
+  MinLength,
 } from 'class-validator';
 
 export class createTransactionDto {
@@ -51,6 +52,7 @@ export class createTransactionDto {
 
   @ApiProperty()
   @IsString()
+  @MinLength(4)
   inputData: string;
 
   @ApiProperty()
